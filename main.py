@@ -46,7 +46,7 @@ def froze(update: Update, context: CallbackContext):
                                                                           "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
                                                                           "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
-    ranking.replace_one({"_id": "froze"}, {"$inc": {f"{str(update.effective_user.id)}": 1}}, upsert=True)
+    ranking.update_one({"_id": "froze"}, {"$inc": {f"{str(update.effective_user.id)}": 1}}, upsert=True)
     c = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
