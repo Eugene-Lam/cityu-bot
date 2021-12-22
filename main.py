@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.DEBUG,
 
 mongo = MongoClient('mongodb+srv://eugene:9Q9dBqcyiKuQdvfe@monpodb.lqom3.mongodb.net')
 db = mongo['CityU_Bot']
+ranking = db['ranking']
 
 updater = Updater(token='1973202635:AAGdKCr2ljX7sUnfo-dzvAiQUttL2qQ1GAM', use_context=True)
 
@@ -36,13 +37,14 @@ def froze(update: Update, context: CallbackContext):
     except AttributeError:
         who = "他"
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=f"{update.effective_user.first_name}愣了，這才想起來"
-                                                                        f"，{who}是城市大學畢業的，"
-                                                                        "所以才有這麼高的素質。城市大學是一所歷史悠久、"
-                                                                        "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
-                                                                        "具有重要影響力與競爭力的綜合性大學，在多個學術領"
-                                                                        "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
-                                                                        "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
+                                                                          f"，{who}是城市大學畢業的，"
+                                                                          "所以才有這麼高的素質。城市大學是一所歷史悠久、"
+                                                                          "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
+                                                                          "具有重要影響力與競爭力的綜合性大學，在多個學術領"
+                                                                          "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
+                                                                          "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
+    ranking.replace_one({"_id": "froze"}, {"$inc": {f"{update.effective_user.id}": 1}}, upsert=True)
     c = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
