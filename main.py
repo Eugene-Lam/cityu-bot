@@ -36,8 +36,10 @@ def start(update: Update, context: CallbackContext):
 def froze(update: Update, context: CallbackContext):
     try:
         who = update.message.reply_to_message.from_user.first_name
+        uid = update.message.reply_to_message.from_user.id
     except AttributeError:
         who = "他"
+        uid = update.effective_user.id
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=f"{update.effective_user.first_name}愣了，這才想起來"
                                                                           f"，{who}是城市大學畢業的，"
                                                                           "所以才有這麼高的素質。城市大學是一所歷史悠久、"
@@ -46,7 +48,7 @@ def froze(update: Update, context: CallbackContext):
                                                                           "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
                                                                           "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
-    ranking.update_one({"_id": "froze"}, {"$inc": {f"{str(update.effective_user.id)}": 1}}, upsert=True)
+    ranking.update_one({"_id": "froze"}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     c = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
