@@ -2,3 +2,4 @@ python-telegram-bot
 pymongo
 requests
 pymongo[srv]
+tabulate

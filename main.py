@@ -3,9 +3,11 @@ import logging
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
 from telegram import Update
 
+from tabulate import tabulate
+
 from pymongo import MongoClient
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 mongo = MongoClient('mongodb+srv://eugene:9Q9dBqcyiKuQdvfe@monpodb.lqom3.mongodb.net')
@@ -44,17 +46,21 @@ def froze(update: Update, context: CallbackContext):
                                                                           "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
                                                                           "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
-    ranking.replace_one({"_id": "froze"}, {"$inc": {f"{update.effective_user.id}": 1}}, upsert=True)
+    ranking.replace_one({"_id": "froze"}, {"$inc": {f"{str(update.effective_user.id)}": 1}}, upsert=True)
     c = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
     }
-    context.job_queue.run_once(delete_message, 300, context=c)
+    context.job_queue.run_once(delete_message, 3600, context=c)
     c = {
         "chat": update.message.chat.id,
         "message_id": msg.message_id,
     }
-    context.job_queue.run_once(delete_message, 300, context=c)
+    context.job_queue.run_once(delete_message, 3600, context=c)
+
+
+def get_froze_rank(update: Update, context: CallbackContext):
+    return
 
 
 def gpa_god(update: Update, context: CallbackContext):
@@ -63,7 +69,7 @@ def gpa_god(update: Update, context: CallbackContext):
 
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
-gpa_god_handler = CommandHandler('gpagod', gpa_god)
+# gpa_god_handler = CommandHandler('gpagod', gpa_god)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
