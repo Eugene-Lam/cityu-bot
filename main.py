@@ -7,6 +7,10 @@ from tabulate import tabulate
 
 from pymongo import MongoClient
 
+import schedule
+
+import time
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -20,9 +24,16 @@ logger = logging.getLogger()
 
 dispatcher = updater.dispatcher
 
+cooldown_gpa_god = []
+
 
 def delete_message(context: CallbackContext) -> None:
     context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
+
+
+def reset_cooldown():
+    global cooldown_gpa_god
+    cooldown_gpa_god = []
 
 
 def get_firstname(user):
@@ -66,17 +77,23 @@ def get_froze_rank(update: Update, context: CallbackContext):
 
 
 def gpa_god(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="")
+    if update.effective_user.id not in cooldown_gpa_god:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"GPA God 保佑{update.effective_user.first_name}")
+        cooldown_gpa_god.append(update.effective_user.id)
+    else:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪求過囉，求得多好GPA會0.00！")
 
 
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
-# gpa_god_handler = CommandHandler('gpagod', gpa_god)
+gpa_god_handler = CommandHandler('gpagod', gpa_god)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
+dispatcher.add_handler(gpa_god_handler)
+
+schedule.every().day.at("00:00").do(reset_cooldown)
 
 updater.start_polling()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
-#test
