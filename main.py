@@ -31,12 +31,21 @@ dispatcher = updater.dispatcher
 
 cooldown_gpa_god = {}
 
+restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
+              "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
+              "AC3 Canteen", "AC3 Canteen",
+              "Kebab 4/F AC1",
+              "Subway 3/F AC3", "Subway 3/F AC3",
+              "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
+              "Lodge Bistro G/F Academic Exchange Building",
+              "White Zone"]
+
 
 def delete_message(context: CallbackContext) -> None:
     context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
 
 
-def cron_delete_message(update: Update = None, context: CallbackContext = None, msg = None, second=3600):
+def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600):
     c = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
@@ -83,16 +92,8 @@ def get_froze_rank(update: Update, context: CallbackContext):
 
 
 def what_to_eat(update: Update, context: CallbackContext):
-    restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
-                  "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
-                  "AC3 Canteen", "AC3 Canteen",
-                  "Kebab 4/F AC1",
-                  "Subway 3/F AC3", "Subway 3/F AC3",
-                  "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
-                  "Lodge Bistro G/F Academic Exchange Building",
-                  "White Zone"]
-
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant)+"!", reply_to_message_id=update.message.message_id)
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
+                                   reply_to_message_id=update.message.message_id)
     # cron_delete_message(update=update, context=context, second=3600, msg=msg)
 
 
