@@ -7,6 +7,9 @@ from tabulate import tabulate
 
 from pymongo import MongoClient
 
+import requests
+
+import json
 import os
 import random
 
@@ -79,7 +82,7 @@ def what_to_eat(update: Update, context: CallbackContext):
     restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
                   "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
                   "AC3 Canteen", "AC3 Canteen",
-                  "Kebab 4/F AC1", "Kebab 4/F AC1",
+                  "Kebab 4/F AC1",
                   "Subway 3/F AC3", "Subway 3/F AC3",
                   "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
                   "Lodge Bistro G/F Academic Exchange Building"]
