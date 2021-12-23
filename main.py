@@ -12,8 +12,8 @@ import os
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-TOKEN = "1973202635:AAGdKCr2ljX7sUnfo-dzvAiQUttL2qQ1GAM"
-DB = "mongodb+srv://eugene:9Q9dBqcyiKuQdvfe@monpodb.lqom3.mongodb.net"
+TOKEN = os.environ['TOKEN']
+DB = os.environ['DB']
 
 mongo = MongoClient(DB)
 db = mongo['CityU_Bot']
