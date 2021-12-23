@@ -85,7 +85,8 @@ def what_to_eat(update: Update, context: CallbackContext):
                   "Kebab 4/F AC1",
                   "Subway 3/F AC3", "Subway 3/F AC3",
                   "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
-                  "Lodge Bistro G/F Academic Exchange Building"]
+                  "Lodge Bistro G/F Academic Exchange Building",
+                  "White Zone"]
 
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant)+"!", reply_to_message_id=update.message.message_id)
     c = {
