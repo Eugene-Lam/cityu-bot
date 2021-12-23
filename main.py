@@ -10,6 +10,7 @@ from pymongo import MongoClient
 import schedule
 
 import time
+import os
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -24,7 +25,7 @@ logger = logging.getLogger()
 
 dispatcher = updater.dispatcher
 
-cooldown_gpa_god = []
+cooldown_gpa_god = {}
 
 
 def delete_message(context: CallbackContext) -> None:
@@ -33,11 +34,8 @@ def delete_message(context: CallbackContext) -> None:
 
 def reset_cooldown():
     global cooldown_gpa_god
-    cooldown_gpa_god = []
-
-
-def get_firstname(user):
-    return user.first_name
+    for x in [*cooldown_gpa_god]:
+        cooldown_gpa_god[x] = []
 
 
 def start(update: Update, context: CallbackContext):
@@ -77,11 +75,13 @@ def get_froze_rank(update: Update, context: CallbackContext):
 
 
 def gpa_god(update: Update, context: CallbackContext):
-    if update.effective_user.id not in cooldown_gpa_god:
+    if update.message.chat.id not in cooldown_gpa_god:
+        cooldown_gpa_god[update.message.chat.id] = []
+    if update.effective_user.id not in cooldown_gpa_god[update.message.chat.id]:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"GPA God 保佑{update.effective_user.first_name}")
-        cooldown_gpa_god.append(update.effective_user.id)
+        cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪求過囉，求得多GPA會0.00！")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
 
 
 start_handler = CommandHandler('start', start)
