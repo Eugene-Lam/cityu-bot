@@ -12,7 +12,7 @@ import os
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-TOKEN = os.environ['TOKEN']
+TOKEN = "1973202635:AAGdKCr2ljX7sUnfo-dzvAiQUttL2qQ1GAM"
 DB = "mongodb+srv://eugene:9Q9dBqcyiKuQdvfe@monpodb.lqom3.mongodb.net"
 
 mongo = MongoClient(DB)
