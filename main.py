@@ -94,6 +94,8 @@ dispatcher.add_handler(gpa_god_handler)
 
 schedule.every().day.at("00:00").do(reset_cooldown)
 
+print(time.time())
+
 updater.start_polling()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
