@@ -7,19 +7,19 @@ from tabulate import tabulate
 
 from pymongo import MongoClient
 
-import schedule
-
-import time
 import os
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-mongo = MongoClient('mongodb+srv://eugene:9Q9dBqcyiKuQdvfe@monpodb.lqom3.mongodb.net')
+TOKEN = os.environ['TOKEN']
+DB = os.environ['DB']
+
+mongo = MongoClient(DB)
 db = mongo['CityU_Bot']
 ranking = db['ranking']
 
-updater = Updater(token='1973202635:AAGdKCr2ljX7sUnfo-dzvAiQUttL2qQ1GAM', use_context=True)
+updater = Updater(token=TOKEN, use_context=True)
 
 logger = logging.getLogger()
 
@@ -91,10 +91,6 @@ gpa_god_handler = CommandHandler('gpagod', gpa_god)
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
 dispatcher.add_handler(gpa_god_handler)
-
-schedule.every().day.at("00:00").do(reset_cooldown)
-
-print(time.time())
 
 updater.start_polling()
 
