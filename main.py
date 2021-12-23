@@ -8,6 +8,7 @@ from tabulate import tabulate
 from pymongo import MongoClient
 
 import os
+import random
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -74,6 +75,18 @@ def get_froze_rank(update: Update, context: CallbackContext):
     return
 
 
+def what_to_eat(update: Update, context: CallbackContext):
+    restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
+                  "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
+                  "AC3 Canteen", "AC3 Canteen",
+                  "Kebab AC1 4/F", "Kebab AC1 4/F",
+                  "Subway AC3 3/F", "Subway AC3 3/F",
+                  "Yum Cha BOC 8/F", "Yum Cha BOC 8/F",
+                  "Lodge Bistro G/F, Academic Exchange Building"]
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant)+"!", reply_to_message_id=update.message.message_id)
+
+
 def gpa_god(update: Update, context: CallbackContext):
     if update.message.chat.id not in cooldown_gpa_god:
         cooldown_gpa_god[update.message.chat.id] = []
@@ -87,10 +100,12 @@ def gpa_god(update: Update, context: CallbackContext):
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
+what_to_eat_handler = CommandHandler('whattoeat', what_to_eat)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
 dispatcher.add_handler(gpa_god_handler)
+dispatcher.add_handler(what_to_eat_handler)
 
 updater.start_polling()
 
