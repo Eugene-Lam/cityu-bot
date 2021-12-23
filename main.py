@@ -81,7 +81,7 @@ def gpa_god(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"GPA God 保佑{update.effective_user.first_name}")
         cooldown_gpa_god.append(update.effective_user.id)
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪求過囉，求得多好GPA會0.00！")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪求過囉，求得多GPA會0.00！")
 
 
 start_handler = CommandHandler('start', start)
