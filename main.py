@@ -88,16 +88,16 @@ def what_to_eat(update: Update, context: CallbackContext):
                   "Lodge Bistro G/F Academic Exchange Building"]
 
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant)+"!", reply_to_message_id=update.message.message_id)
-    c = {
-        "chat": update.message.chat.id,
-        "message_id": update.message.message_id,
-    }
-    context.job_queue.run_once(delete_message, 1200, context=c)
-    c = {
-        "chat": update.message.chat.id,
-        "message_id": msg.message_id,
-    }
-    context.job_queue.run_once(delete_message, 1200, context=c)
+    # c = {
+    #     "chat": update.message.chat.id,
+    #     "message_id": update.message.message_id,
+    # }
+    # context.job_queue.run_once(delete_message, 1200, context=c)
+    # c = {
+    #     "chat": update.message.chat.id,
+    #     "message_id": msg.message_id,
+    # }
+    # context.job_queue.run_once(delete_message, 1200, context=c)
 
 def gpa_god(update: Update, context: CallbackContext):
     if update.message.chat.id not in cooldown_gpa_god:
