@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO,
 TOKEN = os.environ['TOKEN']
 DB = os.environ['DB']
 
-mongo = MongoClient(DB)
+mongo = MongoClient("mongodb+srv://"+DB)
 db = mongo['CityU_Bot']
 ranking = db['ranking']
 

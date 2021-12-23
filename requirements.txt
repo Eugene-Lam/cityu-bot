@@ -1,6 +1,6 @@
 python-telegram-bot
+pymongo[srv]
 pymongo
 requests
-pymongo[srv]
 tabulate
 schedule
