@@ -36,6 +36,19 @@ def delete_message(context: CallbackContext) -> None:
     context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
 
 
+def cron_delete_message(update: Update = None, context: CallbackContext = None, msg = None, second=3600):
+    c = {
+        "chat": update.message.chat.id,
+        "message_id": update.message.message_id,
+    }
+    context.job_queue.run_once(delete_message, second, context=c)
+    c = {
+        "chat": update.message.chat.id,
+        "message_id": msg.message_id,
+    }
+    context.job_queue.run_once(delete_message, second, context=c)
+
+
 def reset_cooldown():
     global cooldown_gpa_god
     for x in [*cooldown_gpa_god]:
@@ -62,16 +75,7 @@ def froze(update: Update, context: CallbackContext):
                                                                           "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
     ranking.update_one({"_id": "froze"}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
-    c = {
-        "chat": update.message.chat.id,
-        "message_id": update.message.message_id,
-    }
-    context.job_queue.run_once(delete_message, 3600, context=c)
-    c = {
-        "chat": update.message.chat.id,
-        "message_id": msg.message_id,
-    }
-    context.job_queue.run_once(delete_message, 3600, context=c)
+    cron_delete_message(update=update, context=context, second=3600, msg=msg)
 
 
 def get_froze_rank(update: Update, context: CallbackContext):
@@ -89,16 +93,8 @@ def what_to_eat(update: Update, context: CallbackContext):
                   "White Zone"]
 
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant)+"!", reply_to_message_id=update.message.message_id)
-    c = {
-        "chat": update.message.chat.id,
-        "message_id": update.message.message_id,
-    }
-    context.job_queue.run_once(delete_message, 3600, context=c)
-    c = {
-        "chat": update.message.chat.id,
-        "message_id": msg.message_id,
-    }
-    context.job_queue.run_once(delete_message, 3600, context=c)
+    # cron_delete_message(update=update, context=context, second=3600, msg=msg)
+
 
 def gpa_god(update: Update, context: CallbackContext):
     if update.message.chat.id not in cooldown_gpa_god:
