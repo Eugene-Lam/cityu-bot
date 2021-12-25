@@ -85,7 +85,7 @@ capoos = [
 ]
 
 cityu_infos = {
-    "CityU Schedule Planner": "https://festivaljog.com/",
+    "助一城 Festival Jog - Schedule Planner": "https://festivaljog.com/",
     "CityU GE 指南": "http://cityuge.swiftzer.net/",
     "城大人資訊專頁": "https://www.instagram.com/hkcityu.info/",
     "學生會": "https://www.instagram.com/cityusu/",
