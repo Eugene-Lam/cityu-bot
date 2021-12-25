@@ -162,11 +162,13 @@ start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
 what_to_eat_handler = CommandHandler('whattoeat', what_to_eat)
+capoo_handler = CommandHandler('capoo', capoo)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
 dispatcher.add_handler(gpa_god_handler)
 dispatcher.add_handler(what_to_eat_handler)
+dispatcher.add_handler(capoo_handler)
 
 updater.start_polling()
 
