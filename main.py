@@ -81,7 +81,7 @@ capoo = [
     "Happyutu",
     "Capoo2978",
     "capoomixmixmixmix",
-    "line24868_by_RekcitsEnilbot",
+    "line24868_by_RekcitsEnilbot"
 ]
 
 
@@ -153,9 +153,11 @@ def gpa_god(update: Update, context: CallbackContext):
 
 def capoo(update: Update, context: CallbackContext):
     capoo_set = random.choice(capoo)
+    print(capoo_set)
     sticker_set = context.bot.get_sticker_set(capoo_set).stickers
     msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
                                    reply_to_message_id=update.message.message_id)
+    cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
 start_handler = CommandHandler('start', start)
