@@ -42,7 +42,7 @@ restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
               "Lodge Bistro G/F Academic Exchange Building",
               "White Zone"]
 
-capoo = [
+capoos = [
     "BlueBearBrownBear",
     "Capoo_Dynamic3",
     "Capoo_Dynamic2",
@@ -152,8 +152,7 @@ def gpa_god(update: Update, context: CallbackContext):
 
 
 def capoo(update: Update, context: CallbackContext):
-    capoo_set = random.choice(capoo)
-    print(capoo_set)
+    capoo_set = random.choice(capoos)
     sticker_set = context.bot.get_sticker_set(capoo_set).stickers
     msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
                                    reply_to_message_id=update.message.message_id)
