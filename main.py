@@ -88,7 +88,9 @@ cityu_infos = {
     "CityU Schedule Planner": "https://festivaljog.com/",
     "CityU GE 指南": "http://cityuge.swiftzer.net/",
     "城大人資訊專頁": "https://www.instagram.com/hkcityu.info/",
-    "香港城市大學學生會": "https://www.instagram.com/cityusu/",
+    "學生會": "https://www.instagram.com/cityusu/",
+    "學生會福利部": "https://www.instagram.com/cityusu_welfare/",
+    "城市廣播": "https://www.instagram.com/cityusu.cbc/",
 }
 
 
