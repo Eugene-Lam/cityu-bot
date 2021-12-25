@@ -12,6 +12,8 @@ import requests
 import json
 import os
 import random
+import datetime
+import pytz
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -39,6 +41,48 @@ restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
               "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
               "Lodge Bistro G/F Academic Exchange Building",
               "White Zone"]
+
+capoo = [
+    "BlueBearBrownBear",
+    "Capoo_Dynamic3",
+    "Capoo_Dynamic2",
+    "Capoo_Dynamic1",
+    "CapooEmojiAnimated1",
+    "CrazyCapoo",
+    "HappyCapoo",
+    "HyperCapoo",
+    "Animated_White_Rabbit",
+    "YourCapoo",
+    "AnimatedCapoo",
+    "More_Capoo",
+    "Capoo60FPS",
+    "capoo_sp_animated",
+    "AnimatedBlackCapoo",
+    "Orange_Capoo",
+    "Animated_Capoo",
+
+    "line_11d10a_by_Sean_Bot",
+    "catbugcapoo_kenny",
+    "capoo_no_nichijou",
+    "BugCat_Capoo",
+    "capoo_5_1_by_StickersCloudBot",
+    "line350755774_by_RekcitsEnilbot",
+    "line339685862_by_RekcitsEnilbot",
+    "CapooLoveRabbit",
+    "line11894_by_Sean_Bot",
+    "Capoo5447",
+    "greencapoo",
+    "BugCatCapoo2",
+    "LINE9600",
+    "line7007511_by_Sean_Bot",
+    "line13545_by_Sean_Bot",
+    "line293948094_by_RekcitsEnilbot",
+    "BugCat_Capoo_The_Cutie_Pie",
+    "Happyutu",
+    "Capoo2978",
+    "capoomixmixmixmix",
+    "line24868_by_RekcitsEnilbot",
+]
 
 
 def delete_message(context: CallbackContext) -> None:
@@ -105,6 +149,13 @@ def gpa_god(update: Update, context: CallbackContext):
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
+
+
+def capoo(update: Update, context: CallbackContext):
+    capoo_set = random.choice(capoo)
+    sticker_set = context.bot.get_sticker_set(capoo_set).stickers
+    msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
+                                   reply_to_message_id=update.message.message_id)
 
 
 start_handler = CommandHandler('start', start)
