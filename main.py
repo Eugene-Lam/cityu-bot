@@ -136,7 +136,7 @@ def froze(update: Update, context: CallbackContext):
                                                                           "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
                                                                           "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
-    ranking.update_one({"_id": "froze"}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
+    ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     cron_delete_message(update=update, context=context, second=3600, msg=msg)
 
 
@@ -158,7 +158,7 @@ def gpa_god(update: Update, context: CallbackContext):
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
 
         uid = update.effective_user.id
-        ranking.update_one({"_id": "gpa_god"}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
+        ranking.update_one({"_id": {"type": "gpa_god", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
 
