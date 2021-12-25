@@ -169,13 +169,12 @@ def capoo(update: Update, context: CallbackContext):
 
 
 def cityu_info(update: Update, context: CallbackContext):
-    str = ""
+    strs = ""
     for k, v in cityu_infos.items():
-        str += k + " " + v
-        str += "\n"
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=str,
+        strs += k + " " + v
+        strs += "\n"
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=strs,
                                    reply_to_message_id=update.message.message_id)
-
 
 
 start_handler = CommandHandler('start', start)
