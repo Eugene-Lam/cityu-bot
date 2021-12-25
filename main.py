@@ -84,6 +84,13 @@ capoos = [
     "line24868_by_RekcitsEnilbot"
 ]
 
+cityu_infos = {
+    "CityU Schedule Planner": "https://festivaljog.com/",
+    "CityU GE 指南": "http://cityuge.swiftzer.net/",
+    "城大人資訊專頁": "https://www.instagram.com/hkcityu.info/",
+    "香港城市大學學生會": "https://www.instagram.com/cityusu/",
+}
+
 
 def delete_message(context: CallbackContext) -> None:
     context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
@@ -159,17 +166,29 @@ def capoo(update: Update, context: CallbackContext):
     cron_delete_message(update=update, context=context, second=1200, msg=msg)
 
 
+def cityu_info(update: Update, context: CallbackContext):
+    str = ""
+    for k, v in cityu_infos.items():
+        str += k + " " + v
+        str += "\n"
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=str,
+                                   reply_to_message_id=update.message.message_id)
+
+
+
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
 what_to_eat_handler = CommandHandler('whattoeat', what_to_eat)
 capoo_handler = CommandHandler('capoo', capoo)
+cityu_info_handler = CommandHandler('cityuinfo', cityu_info)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
 dispatcher.add_handler(gpa_god_handler)
 dispatcher.add_handler(what_to_eat_handler)
 dispatcher.add_handler(capoo_handler)
+dispatcher.add_handler(cityu_info_handler)
 
 updater.start_polling()
 
