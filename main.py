@@ -156,6 +156,9 @@ def gpa_god(update: Update, context: CallbackContext):
     if update.effective_user.id not in cooldown_gpa_god[update.message.chat.id]:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"GPA God 保佑{update.effective_user.first_name}")
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
+
+        uid = update.effective_user.id
+        ranking.update_one({"_id": "gpa_god"}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
 
