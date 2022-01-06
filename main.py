@@ -184,7 +184,10 @@ def cityu_info(update: Update, context: CallbackContext):
 
 
 def translate(update: Update, context: CallbackContext):
-    message = update.message.reply_to_message.text
+    if len(update.message.reply_to_message.text) > 0:
+        message = update.message.reply_to_message.text
+    else:
+        message = update.message.text
     if message in ['林鄭', '林鄭月娥']:
         message.replace('林鄭月娥', 'Mother Fucker')
         message.replace('林鄭', 'Mother Fucker')
