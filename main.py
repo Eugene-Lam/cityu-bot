@@ -195,9 +195,9 @@ def translate(update: Update, context: CallbackContext):
         message.lower().replace('carrie lam', '林鄭月娥')
         message.lower().replace('mother fucker', '林鄭月娥')
     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
-        result = translator.translate(message=update.message.text, dest='en').text
+        result = translator.translate(message, dest='en').text
     else:
-        result = translator.translate(message=update.message.text, dest='zh-TW').text
+        result = translator.translate(message, dest='zh-TW').text
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
                                    reply_to_message_id=update.message.message_id)
 
