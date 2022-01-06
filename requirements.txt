@@ -4,3 +4,4 @@ pymongo
 requests
 tabulate
 schedule
+googletrans==3.1.0a0

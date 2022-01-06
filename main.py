@@ -7,6 +7,8 @@ from tabulate import tabulate
 
 from pymongo import MongoClient
 
+from googletrans import Translator
+
 import requests
 
 import json
@@ -14,6 +16,7 @@ import os
 import random
 import datetime
 import pytz
+import re
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -24,6 +27,8 @@ DB = os.environ['DB']
 mongo = MongoClient(DB)
 db = mongo['CityU_Bot']
 ranking = db['ranking']
+
+translator = Translator()
 
 updater = Updater(token=TOKEN, use_context=True)
 
@@ -136,12 +141,9 @@ def froze(update: Update, context: CallbackContext):
                                                                           "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
                                                                           "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
-    ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
+    ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
+                       upsert=True)
     cron_delete_message(update=update, context=context, second=3600, msg=msg)
-
-
-def get_froze_rank(update: Update, context: CallbackContext):
-    return
 
 
 def what_to_eat(update: Update, context: CallbackContext):
@@ -158,7 +160,8 @@ def gpa_god(update: Update, context: CallbackContext):
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
 
         uid = update.effective_user.id
-        ranking.update_one({"_id": {"type": "gpa_god", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}}, upsert=True)
+        ranking.update_one({"_id": {"type": "gpa_god", "group": update.effective_chat.id}},
+                           {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
 
@@ -180,12 +183,29 @@ def cityu_info(update: Update, context: CallbackContext):
                                    reply_to_message_id=update.message.message_id)
 
 
+def translate(update: Update, context: CallbackContext):
+    message = update.message.reply_to_message.text
+    if message in ['林鄭', '林鄭月娥']:
+        message.replace('林鄭月娥', 'Mother Fucker')
+        message.replace('林鄭', 'Mother Fucker')
+    elif message.lower() in ['carrie lam', 'mother fucker']:
+        message.lower().replace('carrie lam', '林鄭月娥')
+        message.lower().replace('mother fucker', '林鄭月娥')
+    if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
+        result = translator.translate(message=update.message.text, dest='en').text
+    else:
+        result = translator.translate(message=update.message.text, dest='zh-TW').text
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
+                                   reply_to_message_id=update.message.message_id)
+
+
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
 what_to_eat_handler = CommandHandler('whattoeat', what_to_eat)
 capoo_handler = CommandHandler('capoo', capoo)
 cityu_info_handler = CommandHandler('cityuinfo', cityu_info)
+translate_handler = CommandHandler('t', translate)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
@@ -193,6 +213,7 @@ dispatcher.add_handler(gpa_god_handler)
 dispatcher.add_handler(what_to_eat_handler)
 dispatcher.add_handler(capoo_handler)
 dispatcher.add_handler(cityu_info_handler)
+dispatcher.add_handler(translate_handler)
 
 updater.start_polling()
 
