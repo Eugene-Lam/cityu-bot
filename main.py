@@ -189,11 +189,11 @@ def translate(update: Update, context: CallbackContext):
     else:
         message = update.message.text
     if message in ['林鄭', '林鄭月娥']:
-        message.replace('林鄭月娥', 'Mother Fucker')
-        message.replace('林鄭', 'Mother Fucker')
+        message = message.replace('林鄭月娥', 'Mother Fucker')
+        message = message.replace('林鄭', 'Mother Fucker')
     elif message.lower() in ['carrie lam', 'mother fucker']:
-        message.lower().replace('carrie lam', '林鄭月娥')
-        message.lower().replace('mother fucker', '林鄭月娥')
+        message = message.lower().replace('carrie lam', '林鄭月娥')
+        message = message.lower().replace('mother fucker', '林鄭月娥')
     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
         result = translator.translate(message, dest='en').text
     else:
