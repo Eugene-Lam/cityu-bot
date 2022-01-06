@@ -185,13 +185,13 @@ def cityu_info(update: Update, context: CallbackContext):
 
 def translate(update: Update, context: CallbackContext):
     if update.message.reply_to_message is not None:
-        message = update.message.reply_to_message.text
+        message = update.message.reply_to_message.text.replace('/t', '')
     else:
-        message = update.message.text
-    if message in ['林鄭', '林鄭月娥']:
+        message = update.message.text.replace('/t', '')
+    if any(message in s for s in ['林鄭', '林鄭月娥']):
         message = message.replace('林鄭月娥', 'Mother Fucker')
         message = message.replace('林鄭', 'Mother Fucker')
-    elif message.lower() in ['carrie lam', 'mother fucker']:
+    elif any(message.lower() in s for s in ['carrie lam', 'mother fucker']):
         message = message.lower().replace('carrie lam', '林鄭月娥')
         message = message.lower().replace('mother fucker', '林鄭月娥')
     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
