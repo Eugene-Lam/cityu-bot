@@ -143,27 +143,29 @@ def froze(update: Update, context: CallbackContext):
 
     ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
                        upsert=True)
-    cron_delete_message(update=update, context=context, second=3600, msg=msg)
+    cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
 def what_to_eat(update: Update, context: CallbackContext):
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
                                    reply_to_message_id=update.message.message_id)
-    # cron_delete_message(update=update, context=context, second=3600, msg=msg)
+    cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
 def gpa_god(update: Update, context: CallbackContext):
     if update.message.chat.id not in cooldown_gpa_god:
         cooldown_gpa_god[update.message.chat.id] = []
     if update.effective_user.id not in cooldown_gpa_god[update.message.chat.id]:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f"GPA God 保佑{update.effective_user.first_name}")
+        msg = context.bot.send_message(chat_id=update.effective_chat.id, text=f"GPA God 保佑{update.effective_user.first_name}")
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
 
         uid = update.effective_user.id
         ranking.update_one({"_id": {"type": "gpa_god", "group": update.effective_chat.id}},
                            {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
+        msg = context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
+
+    cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
 def capoo(update: Update, context: CallbackContext):
@@ -171,7 +173,7 @@ def capoo(update: Update, context: CallbackContext):
     sticker_set = context.bot.get_sticker_set(capoo_set).stickers
     msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
                                    reply_to_message_id=update.message.message_id)
-    cron_delete_message(update=update, context=context, second=1200, msg=msg)
+    cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
 def cityu_info(update: Update, context: CallbackContext):
