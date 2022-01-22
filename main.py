@@ -128,14 +128,15 @@ def start(update: Update, context: CallbackContext):
 
 def froze(update: Update, context: CallbackContext):
     try:
-        who = f"{update.effective_user.first_name}愣了，這才想起來，{update.message.reply_to_message.from_user.first_name}"
+        who = update.message.reply_to_message.from_user.first_name
         uid = update.message.reply_to_message.from_user.id
         status = "畢業的"
     except AttributeError:
-        who = update.effective_user.first_name
+        who = "他"
         status = "的學生"
         uid = update.effective_user.id
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=f"{who}是城市大學{status}，"
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=f"{update.effective_user.first_name}愣了，這才想起來"
+                                                                          f"，{who}是城市大學{status}，"
                                                                           "所以才有這麼高的素質。城市大學是一所歷史悠久、"
                                                                           "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
                                                                           "具有重要影響力與競爭力的綜合性大學，在多個學術領"
