@@ -114,7 +114,7 @@ def reset_cooldown():
 
 
 def start(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a shitty bot, please talk to me!")
 
 
 def froze(update: Update, context: CallbackContext):
