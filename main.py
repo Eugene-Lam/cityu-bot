@@ -1,22 +1,12 @@
 import logging
-
-from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
-from telegram import Update
-
-from tabulate import tabulate
-
-from pymongo import MongoClient
-
-from googletrans import Translator
-
-import requests
-
-import json
 import os
 import random
-import datetime
-import pytz
 import re
+
+from googletrans import Translator
+from pymongo import MongoClient
+from telegram import Update
+from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -207,6 +197,10 @@ def translate(update: Update, context: CallbackContext):
                                    reply_to_message_id=update.message.message_id)
 
 
+def delete_gpa_bot(update: Update, context: CallbackContext):
+    cron_delete_message(update=update, context=context, second=60)
+
+
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
@@ -214,6 +208,7 @@ what_to_eat_handler = CommandHandler('whattoeat', what_to_eat)
 capoo_handler = CommandHandler('capoo', capoo)
 cityu_info_handler = CommandHandler('cityuinfo', cityu_info)
 translate_handler = CommandHandler('t', translate)
+delete_gpa_bot_handler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
@@ -222,6 +217,7 @@ dispatcher.add_handler(what_to_eat_handler)
 dispatcher.add_handler(capoo_handler)
 dispatcher.add_handler(cityu_info_handler)
 dispatcher.add_handler(translate_handler)
+dispatcher.add_handler(delete_gpa_bot_handler)
 
 updater.start_polling()
 
