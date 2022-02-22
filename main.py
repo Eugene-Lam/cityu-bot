@@ -91,6 +91,7 @@ cityu_infos = {
 
 def delete_message(context: CallbackContext) -> None:
     context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
+    logger.info(f"Message {context.job.context['message_id']} in {context.job.context['chat'],} deleted")
 
 
 def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600):
@@ -135,12 +136,14 @@ def froze(update: Update, context: CallbackContext):
 
     ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
                        upsert=True)
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used froze")
     cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
 def what_to_eat(update: Update, context: CallbackContext):
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
                                    reply_to_message_id=update.message.message_id)
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used what to eat")
     cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
@@ -157,7 +160,7 @@ def gpa_god(update: Update, context: CallbackContext):
                            {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
         msg = context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
-
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used gpa god")
     cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
@@ -166,6 +169,8 @@ def capoo(update: Update, context: CallbackContext):
     sticker_set = context.bot.get_sticker_set(capoo_set).stickers
     msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
                                    reply_to_message_id=update.message.message_id)
+    logger.info(
+        f"{update.effective_user.first_name}({update.effective_user.id}) 在 {update.effective_chat.title} 發送了一個 Capoo")
     cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
@@ -176,6 +181,7 @@ def cityu_info(update: Update, context: CallbackContext):
         strs += "\n"
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=strs,
                                    reply_to_message_id=update.message.message_id)
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) send cityu info")
 
 
 def translate(update: Update, context: CallbackContext):
@@ -195,9 +201,11 @@ def translate(update: Update, context: CallbackContext):
         result = translator.translate(message, dest='zh-TW').text
     msg = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
                                    reply_to_message_id=update.message.message_id)
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {message} to {result}")
 
 
 def delete_gpa_bot(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used get gpa bot")
     cron_delete_message(update=update, context=context, second=60)
 
 
