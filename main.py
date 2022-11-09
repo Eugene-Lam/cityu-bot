@@ -126,13 +126,14 @@ def froze(update: Update, context: CallbackContext):
         who = "他"
         status = "的學生"
         uid = update.effective_user.id
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=f"{update.effective_user.first_name}愣了，這才想起來"
-                                                                          f"，{who}是城市大學{status}，"
-                                                                          "所以才有這麼高的素質。城市大學是一所歷史悠久、"
-                                                                          "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
-                                                                          "具有重要影響力與競爭力的綜合性大學，在多個學術領"
-                                                                          "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
-                                                                          "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
+    msg = context.bot.send_message(chat_id=update.effective_chat.id,
+                                   text=f"{update.effective_user.first_name}愣了，這才想起來"
+                                        f"，{who}是城市大學{status}，"
+                                        "所以才有這麼高的素質。城市大學是一所歷史悠久、"
+                                        "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
+                                        "具有重要影響力與競爭力的綜合性大學，在多個學術領"
+                                        "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
+                                        "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
     ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
                        upsert=True)
@@ -209,6 +210,15 @@ def delete_gpa_bot(update: Update, context: CallbackContext):
     cron_delete_message(update=update, context=context, second=60)
 
 
+def rich(update: Update, context: CallbackContext):
+    if update.message.chat.id != -1001780288890: return
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used rich")
+    sticker_set = context.bot.get_sticker_set("Capoo_Dynamic1").stickers
+    print(sticker_set)
+    msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[6],
+                                   reply_to_message_id=update.message.message_id)
+
+
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
@@ -217,6 +227,8 @@ capoo_handler = CommandHandler('capoo', capoo)
 cityu_info_handler = CommandHandler('cityuinfo', cityu_info)
 translate_handler = CommandHandler('t', translate)
 delete_gpa_bot_handler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
+rich_handler = MessageHandler(Filters.regex(r'rich'), rich)
+rich_handler2 = MessageHandler(Filters.regex(r'Rich'), rich)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
@@ -226,6 +238,8 @@ dispatcher.add_handler(capoo_handler)
 dispatcher.add_handler(cityu_info_handler)
 dispatcher.add_handler(translate_handler)
 dispatcher.add_handler(delete_gpa_bot_handler)
+dispatcher.add_handler(rich_handler)
+dispatcher.add_handler(rich_handler2)
 
 updater.start_polling()
 
