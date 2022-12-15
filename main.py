@@ -1,15 +1,59 @@
+import asyncio
 import logging
 import os
 import random
 import re
+import time
+from typing import List, Any
+
+# import pickle
+import pickle5 as pickle
 
 from googletrans import Translator
 from pymongo import MongoClient
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+char_df = pd.read_csv("char.csv")
+phrase_fragment_df = pd.read_csv("phrase_fragment.csv")
+trending_df = pd.read_csv("trending.csv")
+word_df = pd.read_csv("word.csv")
+
+倉頡碼表 = {
+    'q': '手',
+    'w': '田',
+    'e': '水',
+    'r': '口',
+    't': '廿',
+    'y': '卜',
+    'u': '山',
+    'i': '戈',
+    'o': '人',
+    'p': '心',
+    'a': '日',
+    's': '尸',
+    'd': '木',
+    'f': '火',
+    'g': '土',
+    'h': '竹',
+    'j': '十',
+    'k': '大',
+    'l': '中',
+    'z': '重',
+    'x': '難',
+    'c': '金',
+    'v': '女',
+    'b': '月',
+    'n': '弓',
+    'm': '一',
+}
+
+with open('quick5.pickle', 'rb') as handle:
+    quick5 = pickle.load(handle)
 
 TOKEN = os.environ['TOKEN']
 DB = os.environ['DB']
@@ -190,12 +234,6 @@ def translate(update: Update, context: CallbackContext):
         message = update.message.reply_to_message.text.replace('/t', '')
     else:
         message = update.message.text.replace('/t', '')
-    if any(s in message for s in ['林鄭', '林鄭月娥']):
-        message = message.replace('林鄭月娥', 'Mother Fucker')
-        message = message.replace('林鄭', 'Mother Fucker')
-    elif any(s in message.lower() for s in ['carrie lam', 'mother fucker']):
-        message = message.lower().replace('carrie lam', '林鄭月娥')
-        message = message.lower().replace('mother fucker', '林鄭月娥')
     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
         result = translator.translate(message, dest='en').text
     else:
@@ -219,6 +257,94 @@ def rich(update: Update, context: CallbackContext):
                                    reply_to_message_id=update.message.message_id)
 
 
+def edit_university_msg(context: CallbackContext):
+    context.bot.edit_message_text(chat_id=context.job.context["chat"], message_id=context.job.context["message_id"],
+                                  text=context.job.context["text"])
+
+
+def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600, text: str = None):
+    c = {
+        "chat": update.effective_chat.id,
+        "message_id": msg.message_id,
+        "text": text,
+    }
+    context.job_queue.run_once(edit_university_msg, second, context=c)
+
+
+def check_university(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check university")
+    if update.message.reply_to_message is not None:
+        message = update.message.reply_to_message
+        first_name = update.message.reply_to_message.from_user.first_name
+    else:
+        message = update.message
+        first_name = update.effective_user.first_name
+    universities = ["HKU", "CUHK", "CityU", "PolyU", "HKUST", "HKBU", "EDU", "Lingnan", "HKU SPACE", "HKCC", "IVE",
+                    "MIT", "Harvard", "Cambridge", "Imperial College", "Oxford", "University of Edinburgh",
+                    "University of Bath"]
+    random_university = random.choice(universities)
+    second = random.randint(1, 5)
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text="正在檢查.",
+                                   reply_to_message_id=message.message_id)
+    cron_edit_message(update=update, context=context, msg=msg, second=second, text="正在檢查...")
+    cron_edit_message(update=update, context=context, msg=msg, second=second * 2,
+                      text=f"正在檢查 {first_name} 的Instagram")
+    cron_edit_message(update=update, context=context, msg=msg, second=second * 4,
+                      text=f"正在檢查 {first_name} 的Twitter")
+    cron_edit_message(update=update, context=context, msg=msg, second=second * 5,
+                      text=f"正在檢查 {first_name} 的Linkedin")
+    cron_edit_message(update=update, context=context, msg=msg, second=second * 6,
+                      text=f"正在向 {random_university} 確認 {first_name} 的學歷")
+    cron_edit_message(update=update, context=context, msg=msg, second=second * 7,
+                      text=f"正在向 {random_university} 確認 {first_name} 的學歷...")
+    cron_edit_message(update=update, context=context, msg=msg, second=second * 8,
+                      text=f"確認 {first_name} 就讀於 {random_university}")
+
+
+def check_quick5(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check quick5")
+    msg = update.message.text
+    if len(update.message.text) == 7:
+        try:
+            quick5_code: str = quick5[str(msg[-1])]
+            倉頡碼: str = ''.join([倉頡碼表[x] for x in quick5_code])
+            quick5_msg: str = f"{msg[-1]} 的倉頡碼為 {quick5_code} 「{倉頡碼}」"
+        except KeyError:
+            quick5_msg: str = f"找不到 {msg[-1]} 的倉頡碼"
+        try:
+            jyutping: str = char_df.loc[char_df['char'] == msg[-1]]['jyutping'].values[0]
+            if len(jyutping) == 0:
+                raise KeyError
+            jyutping_msg: str = f"{msg[-1]} 的粵拼為 {jyutping}"
+        except Exception:
+            jyutping_msg: str = f"找不到 {msg[-1]} 的粵拼"
+        try:
+            sample_list: List[str] = word_df.loc[word_df['char'].str.contains(msg[-1])]['char'].values.tolist()
+            if len(sample_list) == 0:
+                raise KeyError
+            sample_words: List[str] = random.sample(sample_list, len(sample_list) if len(sample_list) < 5 else 5)
+            sample_5words: str = ', '.join(sample_words)
+            sample_words_msg: str = f"{msg[-1]} 的例詞為 {sample_5words}"
+        except KeyError:
+            sample_words_msg: str = f"找不到 {msg[-1]} 的例詞"
+        try:
+            phrases: List[str] = phrase_fragment_df.loc[phrase_fragment_df['char'].str.contains(msg[-1])][
+                'char'].values.tolist()
+            if len(phrases) == 0:
+                raise KeyError
+            phrases_list: List[str] = random.sample(phrases, len(phrases) if len(phrases) < 3 else 3)
+            phrases_5fragment: str = '\n - '.join(phrases_list)
+            phrases_msg: str = f"{msg[-1]} 的片語為\n - {phrases_5fragment}"
+        except KeyError:
+            phrases_msg: str = f"找不到 {msg[-1]} 的片語"
+        msg_to_send: str = f"{quick5_msg}\n\n{jyutping_msg}\n\n{sample_words_msg}\n\n{phrases_msg}"
+    else:
+        msg_to_send: str = "請輸入 /char [字(冇s)]"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg_to_send,
+                             reply_to_message_id=update.message.message_id)
+
+
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
@@ -229,6 +355,8 @@ translate_handler = CommandHandler('t', translate)
 delete_gpa_bot_handler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
 rich_handler = MessageHandler(Filters.regex(r'rich'), rich)
 rich_handler2 = MessageHandler(Filters.regex(r'Rich'), rich)
+check_university_handler = CommandHandler('checkuniversity', check_university)
+check_quick5_handler = CommandHandler('char', check_quick5)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
@@ -240,7 +368,15 @@ dispatcher.add_handler(translate_handler)
 dispatcher.add_handler(delete_gpa_bot_handler)
 dispatcher.add_handler(rich_handler)
 dispatcher.add_handler(rich_handler2)
+dispatcher.add_handler(check_university_handler)
+dispatcher.add_handler(check_quick5_handler)
 
-updater.start_polling()
+try:
+    updater.start_polling()
+except KeyboardInterrupt:
+    updater.stop()
+    logger.info("Bot stopped")
+except Exception as e:
+    logger.error(e)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
