@@ -15,7 +15,7 @@ import time
 
 from googletrans import Translator
 from pymongo import MongoClient
-from telegram import Update, ParseMode
+from telegram import Update, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
 import pandas as pd
 import openai
@@ -382,8 +382,7 @@ def chatgpt(update: Update, context: CallbackContext):
             gpt.insert_one({'chat_id': update.effective_chat.id, 'message_id': update.message.message_id,
                             'user_id': update.effective_user.id,
                             'message': message,
-                            'reply_id': reply_id,
-                            'deleted': False})
+                            'reply_id': reply_id})
         except Exception as e:
             logger.error(e)
             context.bot.send_message(chat_id=update.effective_chat.id, text="發生錯誤，請稍後再試",
@@ -399,13 +398,13 @@ def chatgpt(update: Update, context: CallbackContext):
         if update.message.reply_to_message.from_user.id != 1973202635:
             context.bot.send_message(chat_id=update.effective_chat.id, text="You must reply to my message")
             return
-        coversation = gpt.find_one(
+        conversation = gpt.find_one(
             {'chat_id': update.effective_chat.id, 'message_id': update.message.reply_to_message.message_id})
-        while coversation is not None:
-            msg_stack.append(coversation)
-            if coversation['reply_id'] == -1:
+        while conversation is not None:
+            msg_stack.append(conversation)
+            if conversation['reply_id'] == -1:
                 break
-            coversation = gpt.find_one({'chat_id': update.effective_chat.id, 'message_id': coversation['reply_id']})
+            conversation = gpt.find_one({'chat_id': update.effective_chat.id, 'message_id': conversation['reply_id']})
         m = msg_stack.pop()
         while m is not None:
             if m['user_id'] == 1973202635:
@@ -433,8 +432,9 @@ def chatgpt(update: Update, context: CallbackContext):
                                                          indent=4) + '```'
     gpt.insert_one(
         {'chat_id': update.effective_chat.id, 'message_id': update.message.message_id, 'message': content,
-         'user_id': 1973202635, 'reply_id': update.message.message_id, 'deleted': False})
-    content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
+         'user_id': 1973202635, 'reply_id': update.message.message_id})
+    content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a " \
+               "href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
     context.bot.send_message(chat_id=update.effective_chat.id, text=content,
                              reply_to_message_id=update.message.message_id,
                              parse_mode=ParseMode.HTML, disable_web_page_preview=True)
@@ -446,9 +446,9 @@ def purge_data(update: Update, context: CallbackContext):
               "are you sure you want to continue?" \
               "\n\n" \
               "警告: 這會刪除所有與該訊息有關的聊天記錄，你確定要繼續嗎？"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
-                             reply_to_message_id=update.message.message_id,
-                             parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Yes", callback_data='yes'), InlineKeyboardButton("No", callback_data='no')]])
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message, reply_markup=markup)
 
 
 def log_chat_id(update: Update, context: CallbackContext):
