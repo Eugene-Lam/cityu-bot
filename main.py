@@ -26,7 +26,7 @@ phrase_fragment_df: DataFrame = pd.read_csv("phrase_fragment.csv")
 trending_df: DataFrame = pd.read_csv("trending.csv")
 word_df: DataFrame = pd.read_csv("word.csv")
 
-倉頡碼表: dict[str, str] = {
+倉頡碼表 = {
     'q': '手',
     'w': '田',
     'e': '水',
@@ -79,16 +79,16 @@ cooldown_gpa_god: dict = {}
 
 cooldown_chat_gpt: dict = {}
 
-restaurant: list[str] = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
-                         "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
-                         "AC3 Canteen", "AC3 Canteen",
-                         "Kebab 4/F AC1",
-                         "Subway 3/F AC3", "Subway 3/F AC3",
-                         "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
-                         "Lodge Bistro G/F Academic Exchange Building",
-                         "White Zone"]
+restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
+              "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
+              "AC3 Canteen", "AC3 Canteen",
+              "Kebab 4/F AC1",
+              "Subway 3/F AC3", "Subway 3/F AC3",
+              "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
+              "Lodge Bistro G/F Academic Exchange Building",
+              "White Zone"]
 
-capoos: list[str] = [
+capoos = [
     "BlueBearBrownBear",
     "Capoo_Dynamic3",
     "Capoo_Dynamic2",
@@ -130,7 +130,7 @@ capoos: list[str] = [
     "line24868_by_RekcitsEnilbot"
 ]
 
-cityu_infos: dict[str, str] = {
+cityu_infos = {
     "助一城 Festival Jog - Schedule Planner": "https://festivaljog.com/",
     "CityU GE 指南": "http://cityuge.swiftzer.net/",
     "城大人資訊專頁": "https://www.instagram.com/hkcityu.info/",
@@ -357,6 +357,9 @@ def check_quick5(update: Update, context: CallbackContext) -> None:
 
 def chatgpt(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used chatgpt")
+    # if update.effective_user.id != 110054652:
+    #     context.bot.send_message(chat_id=update.effective_chat.id, text="Under maintenance")
+    #     return
     try:
         if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
             diff: int = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
@@ -414,11 +417,14 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
             m = msg_stack.pop() if len(msg_stack) > 0 else None
     message = update.message.text.replace('/ask', '').replace('--debug', '')
     msg.append({"role": "user", "content": f"{message}"})
+    res = context.bot.send_message(chat_id=update.effective_chat.id, text="Generating...",
+                                   reply_to_message_id=update.message.message_id,
+                                   parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     try:
         result = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=msg,
-            max_tokens=700,
+            max_tokens=1300,
         )
     except Exception as e:
         logger.error(e)
@@ -430,14 +436,15 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
     if '--debug' in update.message.text:
         content: str = content + '\n\n\n```' + pprint.pformat(msg,
                                                               indent=4) + '```'
+
     gpt.insert_one(
-        {'chat_id': update.effective_chat.id, 'message_id': update.message.message_id, 'message': content,
+        {'chat_id': update.effective_chat.id, 'message_id': res.message_id, 'message': content,
          'user_id': 1973202635, 'reply_id': update.message.message_id})
     content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a " \
                "href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=content,
-                             reply_to_message_id=update.message.message_id,
-                             parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    logger.info(content)
+    context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
+                                  parse_mode=ParseMode.HTML, )
 
 
 def purge_data(update: Update, context: CallbackContext):
@@ -448,7 +455,7 @@ def purge_data(update: Update, context: CallbackContext):
                    "警告: 這會刪除所有與該訊息有關的聊天記錄，你確定要繼續嗎？"
     markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
         [[InlineKeyboardButton("Yes", callback_data='yes'), InlineKeyboardButton("No", callback_data='no')]])
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message, reply_markup=markup)
+    context.bot.send_message(chat_id=update.effective_chat, text=message, reply_markup=markup)
 
 
 def callback_purge_data_handler(update: Update, context: CallbackContext) -> None:
@@ -474,7 +481,7 @@ def broadcast(update: Update, context: CallbackContext) -> None:
     if update.effective_user.id != 110054652:
         context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
         return
-    message: str = update.message.text.replace('/broadcast', '')
+    message: str = update.message.text.replace('/broadcast ', '')
     if message == '':
         context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /broadcast [訊息]")
         return
@@ -509,9 +516,10 @@ check_university_handler: CommandHandler = CommandHandler('checkuniversity', che
 check_quick5_handler: CommandHandler = CommandHandler('ch', check_quick5)
 check_quick5_handler_char: CommandHandler = CommandHandler('char', check_quick5)
 chatgpt_handler: CommandHandler = CommandHandler('ask', chatgpt)
-log_chat_id_handler: MessageHandler = MessageHandler(Filters.all, log_chat_id)
 broadcast_handler: CommandHandler = CommandHandler('broadcast', broadcast)
 purge_data_handler: CommandHandler = CommandHandler('purgedata', purge_data)
+
+log_chat_id_handler: MessageHandler = MessageHandler(Filters.all, log_chat_id)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
