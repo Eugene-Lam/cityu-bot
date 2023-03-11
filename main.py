@@ -1,35 +1,32 @@
-import asyncio
 import logging
 import os
+import pprint
 import random
 import re
 import time
 from typing import List, Any
-import pprint
-from queue import Queue
-from collections import deque
-# import pickle
-import pickle5 as pickle
-import telegram
-import time
 
-from googletrans import Translator
-from pymongo import MongoClient
-from telegram import Update, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
-import pandas as pd
 import openai
+import pandas as pd
+import pickle5 as pickle
+from googletrans import Translator
+from pandas import DataFrame
+from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.database import Database
+from telegram import Update, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, Message, Sticker
+from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater, CallbackQueryHandler
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 openai.api_key = str(os.environ['OPENAI'])
 
-char_df = pd.read_csv("char.csv")
-phrase_fragment_df = pd.read_csv("phrase_fragment.csv")
-trending_df = pd.read_csv("trending.csv")
-word_df = pd.read_csv("word.csv")
+char_df: DataFrame = pd.read_csv("char.csv")
+phrase_fragment_df: DataFrame = pd.read_csv("phrase_fragment.csv")
+trending_df: DataFrame = pd.read_csv("trending.csv")
+word_df: DataFrame = pd.read_csv("word.csv")
 
-倉頡碼表 = {
+倉頡碼表: dict[str, str] = {
     'q': '手',
     'w': '田',
     'e': '水',
@@ -59,39 +56,39 @@ word_df = pd.read_csv("word.csv")
 }
 
 with open('quick5.pickle', 'rb') as handle:
-    quick5 = pickle.load(handle)
+    quick5: Any = pickle.load(handle)
 
-TOKEN = os.environ['TOKEN']
-DB = os.environ['DB']
+TOKEN: str = os.environ['TOKEN']
+DB: str = os.environ['DB']
 
-mongo = MongoClient(DB)
-db = mongo['CityU_Bot']
-ranking = db['ranking']
-gpt = db['chatgpt']
-chat_ids = db['chat_id']
+mongo: MongoClient = MongoClient(DB)
+db: Database = mongo['CityU_Bot']
+ranking: Collection = db['ranking']
+gpt: Collection = db['chatgpt']
+chat_ids: Collection = db['chat_id']
 
-translator = Translator()
+translator: Translator = Translator()
 
 updater = Updater(token=TOKEN, use_context=True)
 
-logger = logging.getLogger()
+logger: logging.Logger = logging.getLogger()
 
 dispatcher = updater.dispatcher
 
-cooldown_gpa_god = {}
+cooldown_gpa_god: dict = {}
 
-cooldown_chat_gpt = {}
+cooldown_chat_gpt: dict = {}
 
-restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
-              "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
-              "AC3 Canteen", "AC3 Canteen",
-              "Kebab 4/F AC1",
-              "Subway 3/F AC3", "Subway 3/F AC3",
-              "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
-              "Lodge Bistro G/F Academic Exchange Building",
-              "White Zone"]
+restaurant: list[str] = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
+                         "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
+                         "AC3 Canteen", "AC3 Canteen",
+                         "Kebab 4/F AC1",
+                         "Subway 3/F AC3", "Subway 3/F AC3",
+                         "Yum Cha 8/F BOC", "Yum Cha 8/F BOC",
+                         "Lodge Bistro G/F Academic Exchange Building",
+                         "White Zone"]
 
-capoos = [
+capoos: list[str] = [
     "BlueBearBrownBear",
     "Capoo_Dynamic3",
     "Capoo_Dynamic2",
@@ -133,7 +130,7 @@ capoos = [
     "line24868_by_RekcitsEnilbot"
 ]
 
-cityu_infos = {
+cityu_infos: dict[str, str] = {
     "助一城 Festival Jog - Schedule Planner": "https://festivaljog.com/",
     "CityU GE 指南": "http://cityuge.swiftzer.net/",
     "城大人資訊專頁": "https://www.instagram.com/hkcityu.info/",
@@ -148,46 +145,46 @@ def delete_message(context: CallbackContext) -> None:
     logger.info(f"Message {context.job.context['message_id']} in {context.job.context['chat'],} deleted")
 
 
-def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600):
-    c = {
+def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600) -> None:
+    c: dict[str, int] = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
     }
     context.job_queue.run_once(delete_message, second, context=c)
-    c = {
+    c: dict[str, int] = {
         "chat": update.message.chat.id,
         "message_id": msg.message_id,
     }
     context.job_queue.run_once(delete_message, second, context=c)
 
 
-def reset_cooldown():
+def reset_cooldown() -> None:
     global cooldown_gpa_god
     for x in [*cooldown_gpa_god]:
         cooldown_gpa_god[x] = []
 
 
-def start(update: Update, context: CallbackContext):
+def start(update: Update, context: CallbackContext) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a shitty bot, please talk to me!")
 
 
-def froze(update: Update, context: CallbackContext):
+def froze(update: Update, context: CallbackContext) -> None:
     try:
-        who = update.message.reply_to_message.from_user.first_name
-        uid = update.message.reply_to_message.from_user.id
-        status = "畢業的"
+        who: str = update.message.reply_to_message.from_user.first_name
+        uid: int = update.message.reply_to_message.from_user.id
+        status: str = "畢業的"
     except AttributeError:
-        who = "他"
-        status = "的學生"
-        uid = update.effective_user.id
-    msg = context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=f"{update.effective_user.first_name}愣了，這才想起來"
-                                        f"，{who}是城市大學{status}，"
-                                        "所以才有這麼高的素質。城市大學是一所歷史悠久、"
-                                        "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
-                                        "具有重要影響力與競爭力的綜合性大學，在多個學術領"
-                                        "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
-                                        "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
+        who: str = "他"
+        status: int = "的學生"
+        uid: str = update.effective_user.id
+    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id,
+                                            text=f"{update.effective_user.first_name}愣了，這才想起來"
+                                                 f"，{who}是城市大學{status}，"
+                                                 "所以才有這麼高的素質。城市大學是一所歷史悠久、"
+                                                 "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
+                                                 "具有重要影響力與競爭力的綜合性大學，在多個學術領"
+                                                 "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
+                                                 "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
     ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
                        upsert=True)
@@ -202,69 +199,70 @@ def what_to_eat(update: Update, context: CallbackContext):
     cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
-def gpa_god(update: Update, context: CallbackContext):
+def gpa_god(update: Update, context: CallbackContext) -> None:
     if update.message.chat.id not in cooldown_gpa_god:
         cooldown_gpa_god[update.message.chat.id] = []
     if update.effective_user.id not in cooldown_gpa_god[update.message.chat.id]:
-        msg = context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text=f"GPA God 保佑{update.effective_user.first_name}")
+        msg: Message = context.bot.send_message(chat_id=update.effective_chat.id,
+                                                text=f"GPA God 保佑{update.effective_user.first_name}")
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
 
-        uid = update.effective_user.id
+        uid: int = update.effective_user.id
         ranking.update_one({"_id": {"type": "gpa_god", "group": update.effective_chat.id}},
                            {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
-        msg = context.bot.send_message(chat_id=update.effective_chat.id, text="你今日咪喺度求過囉，求得多GPA會0.00！")
+        msg: Message = context.bot.send_message(chat_id=update.effective_chat.id,
+                                                text="你今日咪喺度求過囉，求得多GPA會0.00！")
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used gpa god")
     cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
-def capoo(update: Update, context: CallbackContext):
-    capoo_set = random.choice(capoos)
-    sticker_set = context.bot.get_sticker_set(capoo_set).stickers
-    msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
-                                   reply_to_message_id=update.message.message_id)
+def capoo(update: Update, context: CallbackContext) -> None:
+    capoo_set: str = random.choice(capoos)
+    sticker_set: List[Sticker] = context.bot.get_sticker_set(capoo_set).stickers
+    msg: Message = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
+                                            reply_to_message_id=update.message.message_id)
     logger.info(
         f"{update.effective_user.first_name}({update.effective_user.id}) 在 {update.effective_chat.title} 發送了一個 Capoo")
     cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
-def cityu_info(update: Update, context: CallbackContext):
-    strs = ""
+def cityu_info(update: Update, context: CallbackContext) -> None:
+    strs: str = ""
     for k, v in cityu_infos.items():
         strs += k + " " + v
         strs += "\n"
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=strs,
-                                   reply_to_message_id=update.message.message_id)
+    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text=strs,
+                                            reply_to_message_id=update.message.message_id)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) send cityu info")
 
 
-def translate(update: Update, context: CallbackContext):
+def translate(update: Update, context: CallbackContext) -> None:
     if update.message.reply_to_message is not None:
-        message = update.message.reply_to_message.text.replace('/t', '')
+        message: str = update.message.reply_to_message.text.replace('/t', '')
     else:
-        message = update.message.text.replace('/t', '')
+        message: str = update.message.text.replace('/t', '')
     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
-        result = translator.translate(message, dest='en').text
+        result: str = translator.translate(message, dest='en').text
     else:
-        result = translator.translate(message, dest='zh-TW').text
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
-                                   reply_to_message_id=update.message.message_id)
+        result: str = translator.translate(message, dest='zh-TW').text
+    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
+                                            reply_to_message_id=update.message.message_id)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {message} to {result}")
 
 
-def delete_gpa_bot(update: Update, context: CallbackContext):
+def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used get gpa bot")
     cron_delete_message(update=update, context=context, second=60)
 
 
-def rich(update: Update, context: CallbackContext):
+def rich(update: Update, context: CallbackContext) -> None:
     # if update.message.chat.id != -1001780288890: return
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used rich")
-    sticker_set = context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot").stickers
+    sticker_set: List[Sticker] = context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot").stickers
     print(sticker_set)
-    msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[14],
-                                   reply_to_message_id=update.message.message_id)
+    msg: Message = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[14],
+                                            reply_to_message_id=update.message.message_id)
 
 
 def edit_university_msg(context: CallbackContext):
@@ -272,8 +270,9 @@ def edit_university_msg(context: CallbackContext):
                                   text=context.job.context["text"])
 
 
-def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600, text: str = None):
-    c = {
+def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600,
+                      text: str = None) -> None:
+    c: dict[str, Any] = {
         "chat": update.effective_chat.id,
         "message_id": msg.message_id,
         "text": text,
@@ -284,18 +283,19 @@ def cron_edit_message(update: Update = None, context: CallbackContext = None, ms
 def check_university(update: Update, context: CallbackContext):
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check university")
     if update.message.reply_to_message is not None:
-        message = update.message.reply_to_message
-        first_name = update.message.reply_to_message.from_user.first_name
+        message: Message = update.message.reply_to_message
+        first_name: str = update.message.reply_to_message.from_user.first_name
     else:
-        message = update.message
-        first_name = update.effective_user.first_name
-    universities = ["HKU", "CUHK", "CityU", "PolyU", "HKUST", "HKBU", "EDU", "Lingnan", "HKU SPACE", "HKCC", "IVE",
-                    "MIT", "Harvard", "Cambridge", "Imperial College", "Oxford", "University of Edinburgh",
-                    "University of Bath"]
-    random_university = random.choice(universities)
-    second = random.randint(1, 5)
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text="正在檢查.",
-                                   reply_to_message_id=message.message_id)
+        message: Message = update.message
+        first_name: str = update.effective_user.first_name
+    universities: List[str] = ["HKU", "CUHK", "CityU", "PolyU", "HKUST", "HKBU", "EDU", "Lingnan", "HKU SPACE", "HKCC",
+                               "IVE",
+                               "MIT", "Harvard", "Cambridge", "Imperial College", "Oxford", "University of Edinburgh",
+                               "University of Bath"]
+    random_university: str = random.choice(universities)
+    second: int = random.randint(1, 5)
+    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text="正在檢查.",
+                                            reply_to_message_id=message.message_id)
     cron_edit_message(update=update, context=context, msg=msg, second=second, text="正在檢查...")
     cron_edit_message(update=update, context=context, msg=msg, second=second * 2,
                       text=f"正在檢查 {first_name} 的Instagram")
@@ -311,9 +311,9 @@ def check_university(update: Update, context: CallbackContext):
                       text=f"確認 {first_name} 就讀於 {random_university}")
 
 
-def check_quick5(update: Update, context: CallbackContext):
+def check_quick5(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check quick5")
-    msg = update.message.text.split(" ")[-1]
+    msg: str = update.message.text.split(" ")[-1]
     if len(msg) == 1:
         try:
             quick5_code: str = quick5[str(msg[-1])]
@@ -355,11 +355,11 @@ def check_quick5(update: Update, context: CallbackContext):
                              reply_to_message_id=update.message.message_id)
 
 
-def chatgpt(update: Update, context: CallbackContext):
+def chatgpt(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used chatgpt")
     try:
         if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
-            diff = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
+            diff: int = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
             context.bot.send_message(chat_id=update.effective_chat.id, text=f"請等待{10 - diff}秒",
                                      reply_to_message_id=update.message.message_id)
             return
@@ -368,7 +368,7 @@ def chatgpt(update: Update, context: CallbackContext):
     except:
         cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
 
-    message = update.message.text.replace('/ask', '')
+    message: str = update.message.text.replace('/ask', '')
     if message == '':
         context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /ask [訊息]",
                                  reply_to_message_id=update.message.message_id)
@@ -389,23 +389,23 @@ def chatgpt(update: Update, context: CallbackContext):
                                      reply_to_message_id=update.message.message_id)
             return
     if len(''.join(re.findall(r'[\u4e00-\u9fff]+', message))) > 2:
-        prompt = '你是一個人工智能助手，請用繁體中文回答以下問題。'
+        prompt: str = '你是一個人工智能助手，請用繁體中文回答以下問題。'
     else:
         prompt = 'You are an AI assistant, please answer the following questions in corresponding language.'
     msg: list = [{"role": "system", "content": f"{prompt}"}]
-    msg_stack = []
+    msg_stack: list = []
     if update.message.reply_to_message is not None:
         if update.message.reply_to_message.from_user.id != 1973202635:
             context.bot.send_message(chat_id=update.effective_chat.id, text="You must reply to my message")
             return
-        conversation = gpt.find_one(
+        conversation: Any = gpt.find_one(
             {'chat_id': update.effective_chat.id, 'message_id': update.message.reply_to_message.message_id})
         while conversation is not None:
             msg_stack.append(conversation)
             if conversation['reply_id'] == -1:
                 break
             conversation = gpt.find_one({'chat_id': update.effective_chat.id, 'message_id': conversation['reply_id']})
-        m = msg_stack.pop()
+        m: Any = msg_stack.pop()
         while m is not None:
             if m['user_id'] == 1973202635:
                 msg.append({"role": "system", "content": f"{m['message']}"})
@@ -426,10 +426,10 @@ def chatgpt(update: Update, context: CallbackContext):
                                  text="Error, it might be caused by exceeding the tokens limit",
                                  reply_to_message_id=update.message.message_id)
         return
-    content = result['choices'][0]['message']['content']
+    content: str = result['choices'][0]['message']['content']
     if '--debug' in update.message.text:
-        content = content + '\n\n\n```' + pprint.pformat(msg,
-                                                         indent=4) + '```'
+        content: str = content + '\n\n\n```' + pprint.pformat(msg,
+                                                              indent=4) + '```'
     gpt.insert_one(
         {'chat_id': update.effective_chat.id, 'message_id': update.message.message_id, 'message': content,
          'user_id': 1973202635, 'reply_id': update.message.message_id})
@@ -442,26 +442,39 @@ def chatgpt(update: Update, context: CallbackContext):
 
 def purge_data(update: Update, context: CallbackContext):
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used purge_data")
-    message = "Warning: This will delete all chat record related to the message in the database, " \
-              "are you sure you want to continue?" \
-              "\n\n" \
-              "警告: 這會刪除所有與該訊息有關的聊天記錄，你確定要繼續嗎？"
-    markup = InlineKeyboardMarkup(
+    message: str = "Warning: This will delete all chat record related to the message in the database, " \
+                   "are you sure you want to continue?" \
+                   "\n\n" \
+                   "警告: 這會刪除所有與該訊息有關的聊天記錄，你確定要繼續嗎？"
+    markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
         [[InlineKeyboardButton("Yes", callback_data='yes'), InlineKeyboardButton("No", callback_data='no')]])
     context.bot.send_message(chat_id=update.effective_chat.id, text=message, reply_markup=markup)
 
 
-def log_chat_id(update: Update, context: CallbackContext):
+def callback_purge_data_handler(update: Update, context: CallbackContext) -> None:
+    callback_data: str = update.callback_query.data
+    if callback_data == 'yes':
+        reply_id: int = update.callback_query.message.reply_to_message.message_id
+        while reply_id != -1:
+            reply_id: int = update.callback_query.message.reply_to_message.message_id
+            db_reply_id: Any = gpt.find_one({'chat_id': update.effective_chat.id, 'message_id': reply_id})['reply_id']
+            gpt.delete_one({'chat_id': update.effective_chat.id, 'message_id': reply_id})
+            reply_id = db_reply_id
+    elif callback_data == 'no':
+        pass
+
+
+def log_chat_id(update: Update, context: CallbackContext) -> None:
     chat_ids.update_one({'chat_id': update.effective_chat.id}, {'$set': {'chat_id': update.effective_chat.id}},
                         upsert=True)
 
 
-def broadcast(update: Update, context: CallbackContext):
+def broadcast(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used broadcast")
     if update.effective_user.id != 110054652:
         context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
         return
-    message = update.message.text.replace('/broadcast', '')
+    message: str = update.message.text.replace('/broadcast', '')
     if message == '':
         context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /broadcast [訊息]")
         return
@@ -482,22 +495,23 @@ def toggle_chat_command(update: Update, context: CallbackContext):
         return
 
 
-start_handler = CommandHandler('start', start)
-froze_handler = CommandHandler('froze', froze)
-gpa_god_handler = CommandHandler('gpagod', gpa_god)
-what_to_eat_handler = CommandHandler('whattoeat', what_to_eat)
-capoo_handler = CommandHandler('capoo', capoo)
-cityu_info_handler = CommandHandler('cityuinfo', cityu_info)
-translate_handler = CommandHandler('t', translate)
-delete_gpa_bot_handler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
-rich_handler = MessageHandler(Filters.regex(r'rich'), rich)
-rich_handler2 = MessageHandler(Filters.regex(r'Rich'), rich)
-check_university_handler = CommandHandler('checkuniversity', check_university)
-check_quick5_handler = CommandHandler('ch', check_quick5)
-check_quick5_handler_char = CommandHandler('char', check_quick5)
-chatgpt_handler = CommandHandler('ask', chatgpt)
-log_chat_id_handler = MessageHandler(Filters.all, log_chat_id)
-broadcast_handler = CommandHandler('broadcast', broadcast)
+start_handler: CommandHandler = CommandHandler('start', start)
+froze_handler: CommandHandler = CommandHandler('froze', froze)
+gpa_god_handler: CommandHandler = CommandHandler('gpagod', gpa_god)
+what_to_eat_handler: CommandHandler = CommandHandler('whattoeat', what_to_eat)
+capoo_handler: CommandHandler = CommandHandler('capoo', capoo)
+cityu_info_handler: CommandHandler = CommandHandler('cityuinfo', cityu_info)
+translate_handler: CommandHandler = CommandHandler('t', translate)
+delete_gpa_bot_handler: MessageHandler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
+rich_handler: MessageHandler = MessageHandler(Filters.regex(r'rich'), rich)
+rich_handler2: MessageHandler = MessageHandler(Filters.regex(r'Rich'), rich)
+check_university_handler: CommandHandler = CommandHandler('checkuniversity', check_university)
+check_quick5_handler: CommandHandler = CommandHandler('ch', check_quick5)
+check_quick5_handler_char: CommandHandler = CommandHandler('char', check_quick5)
+chatgpt_handler: CommandHandler = CommandHandler('ask', chatgpt)
+log_chat_id_handler: MessageHandler = MessageHandler(Filters.all, log_chat_id)
+broadcast_handler: CommandHandler = CommandHandler('broadcast', broadcast)
+purge_data_handler: CommandHandler = CommandHandler('purgedata', purge_data)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
@@ -514,6 +528,8 @@ dispatcher.add_handler(check_quick5_handler)
 dispatcher.add_handler(check_quick5_handler_char)
 dispatcher.add_handler(chatgpt_handler)
 dispatcher.add_handler(broadcast_handler)
+dispatcher.add_handler(purge_data_handler)
+dispatcher.add_handler(CallbackQueryHandler(callback_purge_data_handler))
 
 dispatcher.add_handler(log_chat_id_handler)
 
