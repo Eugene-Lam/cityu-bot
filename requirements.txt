@@ -7,3 +7,4 @@ schedule
 googletrans==3.1.0a0
 pandas
 pickle5
+openai

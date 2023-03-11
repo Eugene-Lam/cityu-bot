@@ -5,18 +5,24 @@ import random
 import re
 import time
 from typing import List, Any
-
+import pprint
+from queue import Queue
+from collections import deque
 # import pickle
 import pickle5 as pickle
+import telegram
+import time
 
 from googletrans import Translator
 from pymongo import MongoClient
-from telegram import Update
+from telegram import Update, ParseMode
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater
 import pandas as pd
+import openai
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+openai.api_key = str(os.environ['OPENAI'])
 
 char_df = pd.read_csv("char.csv")
 phrase_fragment_df = pd.read_csv("phrase_fragment.csv")
@@ -61,6 +67,8 @@ DB = os.environ['DB']
 mongo = MongoClient(DB)
 db = mongo['CityU_Bot']
 ranking = db['ranking']
+gpt = db['chatgpt']
+chat_ids = db['chat_id']
 
 translator = Translator()
 
@@ -71,6 +79,8 @@ logger = logging.getLogger()
 dispatcher = updater.dispatcher
 
 cooldown_gpa_god = {}
+
+cooldown_chat_gpt = {}
 
 restaurant = ["AC1 Canteen", "AC1 Canteen", "AC1 Canteen",
               "AC2 Canteen", "AC2 Canteen", "AC2 Canteen",
@@ -249,11 +259,11 @@ def delete_gpa_bot(update: Update, context: CallbackContext):
 
 
 def rich(update: Update, context: CallbackContext):
-    if update.message.chat.id != -1001780288890: return
+    # if update.message.chat.id != -1001780288890: return
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used rich")
-    sticker_set = context.bot.get_sticker_set("Capoo_Dynamic1").stickers
+    sticker_set = context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot").stickers
     print(sticker_set)
-    msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[6],
+    msg = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[14],
                                    reply_to_message_id=update.message.message_id)
 
 
@@ -303,8 +313,8 @@ def check_university(update: Update, context: CallbackContext):
 
 def check_quick5(update: Update, context: CallbackContext):
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check quick5")
-    msg = update.message.text
-    if len(update.message.text) == 7:
+    msg = update.message.text.split(" ")[-1]
+    if len(msg) == 1:
         try:
             quick5_code: str = quick5[str(msg[-1])]
             倉頡碼: str = ''.join([倉頡碼表[x] for x in quick5_code])
@@ -345,6 +355,133 @@ def check_quick5(update: Update, context: CallbackContext):
                              reply_to_message_id=update.message.message_id)
 
 
+def chatgpt(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used chatgpt")
+    try:
+        if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
+            diff = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"請等待{10 - diff}秒",
+                                     reply_to_message_id=update.message.message_id)
+            return
+        else:
+            cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
+    except:
+        cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
+
+    message = update.message.text.replace('/ask', '')
+    if message == '':
+        context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /ask [訊息]",
+                                 reply_to_message_id=update.message.message_id)
+        return
+    else:
+        try:
+            try:
+                reply_id = update.message.reply_to_message.message_id
+            except:
+                reply_id = -1
+            gpt.insert_one({'chat_id': update.effective_chat.id, 'message_id': update.message.message_id,
+                            'user_id': update.effective_user.id,
+                            'message': message,
+                            'reply_id': reply_id,
+                            'deleted': False})
+        except Exception as e:
+            logger.error(e)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="發生錯誤，請稍後再試",
+                                     reply_to_message_id=update.message.message_id)
+            return
+    if len(''.join(re.findall(r'[\u4e00-\u9fff]+', message))) > 2:
+        prompt = '你是一個人工智能助手，請用繁體中文回答以下問題。'
+    else:
+        prompt = 'You are an AI assistant, please answer the following questions in corresponding language.'
+    msg: list = [{"role": "system", "content": f"{prompt}"}]
+    msg_stack = []
+    if update.message.reply_to_message is not None:
+        if update.message.reply_to_message.from_user.id != 1973202635:
+            context.bot.send_message(chat_id=update.effective_chat.id, text="You must reply to my message")
+            return
+        coversation = gpt.find_one(
+            {'chat_id': update.effective_chat.id, 'message_id': update.message.reply_to_message.message_id})
+        while coversation is not None:
+            msg_stack.append(coversation)
+            if coversation['reply_id'] == -1:
+                break
+            coversation = gpt.find_one({'chat_id': update.effective_chat.id, 'message_id': coversation['reply_id']})
+        m = msg_stack.pop()
+        while m is not None:
+            if m['user_id'] == 1973202635:
+                msg.append({"role": "system", "content": f"{m['message']}"})
+            else:
+                msg.append({"role": "user", "content": f"{m['message']}"})
+            m = msg_stack.pop() if len(msg_stack) > 0 else None
+    message = update.message.text.replace('/ask', '').replace('--debug', '')
+    msg.append({"role": "user", "content": f"{message}"})
+    try:
+        result = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=msg,
+            max_tokens=700,
+        )
+    except Exception as e:
+        logger.error(e)
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text="Error, it might be caused by exceeding the tokens limit",
+                                 reply_to_message_id=update.message.message_id)
+        return
+    content = result['choices'][0]['message']['content']
+    if '--debug' in update.message.text:
+        content = content + '\n\n\n```' + pprint.pformat(msg,
+                                                         indent=4) + '```'
+    gpt.insert_one(
+        {'chat_id': update.effective_chat.id, 'message_id': update.message.message_id, 'message': content,
+         'user_id': 1973202635, 'reply_id': update.message.message_id, 'deleted': False})
+    content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=content,
+                             reply_to_message_id=update.message.message_id,
+                             parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+
+
+def purge_data(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used purge_data")
+    message = "Warning: This will delete all chat record related to the message in the database, " \
+              "are you sure you want to continue?" \
+              "\n\n" \
+              "警告: 這會刪除所有與該訊息有關的聊天記錄，你確定要繼續嗎？"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message,
+                             reply_to_message_id=update.message.message_id,
+                             parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+
+
+def log_chat_id(update: Update, context: CallbackContext):
+    chat_ids.update_one({'chat_id': update.effective_chat.id}, {'$set': {'chat_id': update.effective_chat.id}},
+                        upsert=True)
+
+
+def broadcast(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used broadcast")
+    if update.effective_user.id != 110054652:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
+        return
+    message = update.message.text.replace('/broadcast', '')
+    if message == '':
+        context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /broadcast [訊息]")
+        return
+    else:
+        for chat_id in chat_ids.find({}):
+            try:
+                context.bot.send_message(chat_id=chat_id['chat_id'], text=message)
+            except Exception as e:
+                logger.error(e)
+                pass
+
+
+def toggle_chat_command(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used toggle_chat_command")
+
+    if update.effective_user.id != 110054652:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
+        return
+
+
 start_handler = CommandHandler('start', start)
 froze_handler = CommandHandler('froze', froze)
 gpa_god_handler = CommandHandler('gpagod', gpa_god)
@@ -356,7 +493,11 @@ delete_gpa_bot_handler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), de
 rich_handler = MessageHandler(Filters.regex(r'rich'), rich)
 rich_handler2 = MessageHandler(Filters.regex(r'Rich'), rich)
 check_university_handler = CommandHandler('checkuniversity', check_university)
-check_quick5_handler = CommandHandler('char', check_quick5)
+check_quick5_handler = CommandHandler('ch', check_quick5)
+check_quick5_handler_char = CommandHandler('char', check_quick5)
+chatgpt_handler = CommandHandler('ask', chatgpt)
+log_chat_id_handler = MessageHandler(Filters.all, log_chat_id)
+broadcast_handler = CommandHandler('broadcast', broadcast)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(froze_handler)
@@ -370,6 +511,11 @@ dispatcher.add_handler(rich_handler)
 dispatcher.add_handler(rich_handler2)
 dispatcher.add_handler(check_university_handler)
 dispatcher.add_handler(check_quick5_handler)
+dispatcher.add_handler(check_quick5_handler_char)
+dispatcher.add_handler(chatgpt_handler)
+dispatcher.add_handler(broadcast_handler)
+
+dispatcher.add_handler(log_chat_id_handler)
 
 try:
     updater.start_polling()
