@@ -28,7 +28,7 @@ following conditions are met:
                 least half of the employees or persons 
                 affiliated with the product must listen to the 
                 "Der Ententanz" (AKA "The Chicken Dance") as 
-                composed by Werner Thomas for no less than two 
+                composed by Werner Thomas for no less than 
                 (15) minutes
             * For every (1) unit distributed, 
                 one (1) or more persons affiliated with the entity 
