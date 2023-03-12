@@ -363,7 +363,8 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
     try:
         if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
             diff: int = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f"請等待{10 - diff}秒",
+            te: str = f"請等待10秒 ({diff}秒 remaining)"
+            context.bot.send_message(chat_id=update.effective_chat.id, text=te,
                                      reply_to_message_id=update.message.message_id)
             return
         else:
@@ -392,9 +393,10 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
                                      reply_to_message_id=update.message.message_id)
             return
     if len(''.join(re.findall(r'[\u4e00-\u9fff]+', message))) > 2:
-        prompt: str = '你是一個人工智能助手，請用繁體中文回答以下問題。'
+        prompt: str = '你是一個專為回答問題而設計的AI，請用繁體中文回答以下問題。'
     else:
-        prompt = 'You are an AI assistant, please answer the following questions in corresponding language.'
+        prompt = 'You are an AI designed to answer any questions, please answer the following questions in the ' \
+                 'corresponding language'
     msg: list = [{"role": "system", "content": f"{prompt}"}]
     msg_stack: list = []
     if update.message.reply_to_message is not None:
@@ -442,7 +444,6 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
          'user_id': 1973202635, 'reply_id': update.message.message_id})
     content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a " \
                "href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
-    logger.info(content)
     context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
                                   parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
