@@ -1,42 +1,64 @@
-吾城bot Proprietary License
+Copyright (c) <YEAR>, <OWNER>
+All rights reserved.
 
-This license governs the use, modification, and distribution of 吾城bot, and any derivative works created from it.
+Chicken Dance License v0.2
+http://supertunaman.com/cdl/
 
-License Grant
-Subject to the terms and conditions of this license, Eugene Lam hereby NOT to grants you a limited, non-exclusive,
-non-transferable license to use 吾城bot for you any purposes.
+Redistribution and use in source and binary forms, with
+or without modification, are permitted provided that the
+following conditions are met:
 
-Restrictions
-You may not:
+    1. Redistributions of source code must retain the 
+        above copyright notice, this list of conditions and 
+        the following disclaimer.
+    2. Redistributions in binary form must reproduce the 
+        above copyright notice, this list of conditions and 
+        the following disclaimer in the documentation and/or 
+        other materials provided with the distribution.
+    3. Neither the name of the <ORGANIZATION> nor the names 
+        of its contributors may be used to endorse or promote 
+        products derived from this software without specific 
+        prior written permission.
+    4. An entity wishing to redistribute in binary form or 
+        include this software in their product without 
+        redistribution of this software's source code with the 
+        product must also submit to these conditions where 
+        applicable: 
+            * For every (1) unit distributed, at 
+                least half of the employees or persons 
+                affiliated with the product must listen to the 
+                "Der Ententanz" (AKA "The Chicken Dance") as 
+                composed by Werner Thomas for no less than two 
+                (15) minutes
+            * For every (1) unit distributed, 
+                one (1) or more persons affiliated with the entity 
+                must be recorded performing the full Chicken Dance, 
+                in an original video at the entity's own expense,
+                and a video encoded in OGG Theora format or a format
+                and codec specified by <OWNER>, at least three (3) 
+                minutes in length, must be submitted to <OWNER>, 
+                provided <OWNER>'s contact information. Any and all
+                copyrights to this video must be transfered to 
+                <ORGANIZATION>. The dance featured in the video
+                must be based upon the instructions on how to perform 
+                the Chicken Dance that you should have received with
+                this software. 
+            * Any employee or person affiliated with the product 
+                must be prohibited from saying the word "gazorninplat" in 
+                public at all times, as long as distribution of the 
+                product continues. 
 
-a. Use 吾城bot for any commercial or personal purpose.
-
-b. Modify, adapt, translate, or create derivative works based on 吾城bot.
-
-c. Reverse engineer, decompile, disassemble, or otherwise attempt to discover the source code of 吾城bot.
-
-d. Distribute, sublicense, or transfer 吾城bot or any derivative works created from it.
-
-Proprietary Rights
-Eugene Lam retains all right, title, and interest in and to 吾城bot, including all intellectual property rights.
-
-Disclaimer of Warranty
-Eugene Lam provides 吾城bot "as is" and without any warranty, express, implied, or statutory. Eugene Lam specifically
-disclaims any implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
-
-Limitation of Liability
-In no event shall Eugene Lam be liable for any damages (including, without limitation, damages for loss of data,
-business interruption, or lost profits) arising out of the use or inability to use 吾城bot, even if Eugene Lam has been
-advised of the possibility of such damages.
-
-Termination
-This license terminates automatically if you violate any of its terms and conditions. Upon termination, you must
-immediately cease all use of 吾城bot and destroy all copies of 吾城bot in your possession.
-
-Governing Law
-This license shall be governed by and construed in accordance with the laws of Hong Kong, without giving effect to its
-principles of conflict of laws.
-
-Entire Agreement
-This license constitutes the entire agreement between you and Eugene Lam regarding 吾城bot and supersedes all prior or
-contemporaneous negotiations, discussions, or agreements between you and Eugene Lam regarding 吾城bot.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE. <ORGANIZATION> ACCEPTS NO LIABILITY FOR
+ANY INJURIES OR EXPENSES SUSTAINED IN THE ACT OF FULFILLING ANY OF
+THE ABOVE TERMS AND CONDITIONS, ACCIDENTAL OR OTHERWISE.
