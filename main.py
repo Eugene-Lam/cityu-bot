@@ -444,7 +444,7 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
                "href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
     logger.info(content)
     context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
-                                  parse_mode=ParseMode.HTML, )
+                                  parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
 def purge_data(update: Update, context: CallbackContext):
