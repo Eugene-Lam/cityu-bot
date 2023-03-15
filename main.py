@@ -426,7 +426,8 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
         result = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=msg,
-            max_tokens=1300,
+            max_tokens=2000,
+            user=str(update.effective_user.id),
         )
     except Exception as e:
         logger.error(e)
@@ -444,8 +445,19 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
          'user_id': 1973202635, 'reply_id': update.message.message_id})
     content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a " \
                "href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
-    context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
-                                  parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    try:
+        context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
+                                      parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    except Exception as e:
+        logger.error(e)
+        context.bot.edit_message_text(chat_id=update.effective_chat.id, text="Error",
+                                      reply_to_message_id=update.message.message_id,
+                                      parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        # to txt file
+        with open('output.txt', 'w') as f:
+            f.wirte(content)
+            context.bot.send_document(chat_id=update.effective_chat.id, document=f,
+                                      reply_to_message_id=update.message.message_id)
 
 
 def purge_data(update: Update, context: CallbackContext):
