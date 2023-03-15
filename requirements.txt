@@ -4,7 +4,7 @@ APScheduler==3.6.3
 async-timeout==4.0.2
 attrs==22.2.0
 cachetools==4.2.2
-certifi==2022.9.24
+certifi==2022.12.7
 chardet==3.0.4
 charset-normalizer==2.1.1
 click==8.1.3
