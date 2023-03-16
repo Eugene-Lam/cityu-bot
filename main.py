@@ -1,20 +1,22 @@
+import io
 import logging
 import os
 import pprint
 import random
 import re
+import tempfile
 import time
 from typing import List, Any
 
 import openai
 import pandas as pd
 import pickle5 as pickle
-from googletrans import Translator
+# from googletrans import Translator
 from pandas import DataFrame
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
-from telegram import Update, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, Message, Sticker
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Message, Sticker, ParseMode
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater, CallbackQueryHandler
 
 logging.basicConfig(level=logging.INFO,
@@ -67,7 +69,7 @@ ranking: Collection = db['ranking']
 gpt: Collection = db['chatgpt']
 chat_ids: Collection = db['chat_id']
 
-translator: Translator = Translator()
+# translator: Translator = Translator()
 
 updater = Updater(token=TOKEN, use_context=True)
 
@@ -237,18 +239,18 @@ def cityu_info(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) send cityu info")
 
 
-def translate(update: Update, context: CallbackContext) -> None:
-    if update.message.reply_to_message is not None:
-        message: str = update.message.reply_to_message.text.replace('/t', '')
-    else:
-        message: str = update.message.text.replace('/t', '')
-    if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
-        result: str = translator.translate(message, dest='en').text
-    else:
-        result: str = translator.translate(message, dest='zh-TW').text
-    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
-                                            reply_to_message_id=update.message.message_id)
-    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {message} to {result}")
+# def translate(update: Update, context: CallbackContext) -> None:
+#     if update.message.reply_to_message is not None:
+#         message: str = update.message.reply_to_message.text.replace('/t', '')
+#     else:
+#         message: str = update.message.text.replace('/t', '')
+#     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
+#         result: str = translator.translate(message, dest='en').text
+#     else:
+#         result: str = translator.translate(message, dest='zh-TW').text
+#     msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
+#                                             reply_to_message_id=update.message.message_id)
+#     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {message} to {result}")
 
 
 def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
@@ -421,7 +423,7 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
     msg.append({"role": "user", "content": f"{message}"})
     res = context.bot.send_message(chat_id=update.effective_chat.id, text="Generating...",
                                    reply_to_message_id=update.message.message_id,
-                                   parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                                   parse_mode='HTML', disable_web_page_preview=True)
     try:
         result = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -449,15 +451,31 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
         context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
                                       parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     except Exception as e:
+        # wontfix
         logger.error(e)
-        context.bot.edit_message_text(chat_id=update.effective_chat.id, text="Error",
-                                      reply_to_message_id=update.message.message_id,
-                                      parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-        # to txt file
-        with open('output.txt', 'w') as f:
-            f.wirte(content)
-            context.bot.send_document(chat_id=update.effective_chat.id, document=f,
-                                      reply_to_message_id=update.message.message_id)
+        try:
+            context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
+                                          parse_mode=ParseMode.MARKDOWN_V2,
+                                          disable_web_page_preview=True)
+        except Exception as e:
+            logger.error(e)
+            try:
+                context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
+                                              disable_web_page_preview=True)
+            except Exception as e:
+                logger.error(e)
+                tmp = tempfile.NamedTemporaryFile()
+
+                # Open the file for writing.
+                with open(tmp.name, 'w') as f:
+                    f.write(content)  # where `stuff` is, y'know... stuff to write (a string)
+                # Open the file for reading.
+                with open(tmp.name, 'r') as f:
+                    file = f.read()
+                context.bot.send_document(chat_id=update.effective_chat.id,
+                                          document=io.BytesIO(file.encode('utf-8')),
+                                          filename='output.txt',
+                                          reply_to_message_id=update.message.message_id)
 
 
 def purge_data(update: Update, context: CallbackContext):
@@ -521,7 +539,7 @@ gpa_god_handler: CommandHandler = CommandHandler('gpagod', gpa_god)
 what_to_eat_handler: CommandHandler = CommandHandler('whattoeat', what_to_eat)
 capoo_handler: CommandHandler = CommandHandler('capoo', capoo)
 cityu_info_handler: CommandHandler = CommandHandler('cityuinfo', cityu_info)
-translate_handler: CommandHandler = CommandHandler('t', translate)
+# translate_handler: CommandHandler = CommandHandler('t', translate)
 check_university_handler: CommandHandler = CommandHandler('checkuniversity', check_university)
 check_quick5_handler: CommandHandler = CommandHandler('ch', check_quick5)
 check_quick5_handler_char: CommandHandler = CommandHandler('char', check_quick5)
@@ -540,7 +558,7 @@ dispatcher.add_handler(gpa_god_handler)
 dispatcher.add_handler(what_to_eat_handler)
 dispatcher.add_handler(capoo_handler)
 dispatcher.add_handler(cityu_info_handler)
-dispatcher.add_handler(translate_handler)
+# dispatcher.add_handler(translate_handler)
 dispatcher.add_handler(delete_gpa_bot_handler)
 dispatcher.add_handler(rich_handler)
 dispatcher.add_handler(rich_handler2)
