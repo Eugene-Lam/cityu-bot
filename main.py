@@ -239,18 +239,32 @@ def cityu_info(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) send cityu info")
 
 
-# def translate(update: Update, context: CallbackContext) -> None:
-#     if update.message.reply_to_message is not None:
-#         message: str = update.message.reply_to_message.text.replace('/t', '')
-#     else:
-#         message: str = update.message.text.replace('/t', '')
-#     if len(re.findall(r'[\u4e00-\u9fff]+', message)) > 0:
-#         result: str = translator.translate(message, dest='en').text
-#     else:
-#         result: str = translator.translate(message, dest='zh-TW').text
-#     msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text=result,
-#                                             reply_to_message_id=update.message.message_id)
-#     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {message} to {result}")
+def translate(update: Update, context: CallbackContext) -> None:
+    if update.message.reply_to_message is not None:
+        prompt: str = update.message.reply_to_message.text.replace('/t', '')
+    else:
+        prompt: str = update.message.text.replace('/t', '')
+    if len(re.findall(r'[\u4e00-\u9fff]+', prompt)) > 0:
+        msg = [
+            {"role": "system", "content": "You are a helpful assistant that translates any language to English."},
+            {"role": "user", "content": f"Translate the following text to English: {prompt}"},
+
+        ]
+    else:
+        msg = [
+            {"role": "system", "content": "You are a helpful assistant that translates any language to "
+                                          "Traditional Chinese."},
+            {"role": "user", "content": f"Translate the following text to Traditional Chinese: {prompt}"},
+        ]
+    message = context.bot.send_message(chat_id=update.effective_chat.id, text="翻譯中...")
+    result = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=msg,
+        user=str(update.effective_user.id),
+    )
+    content: str = result['choices'][0]['message']['content']
+    context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=message.message_id, text=content)
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {prompt} to {result}")
 
 
 def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
@@ -359,21 +373,6 @@ def check_quick5(update: Update, context: CallbackContext) -> None:
 
 def chatgpt(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used chatgpt")
-    # if update.effective_user.id != 110054652:
-    #     context.bot.send_message(chat_id=update.effective_chat.id, text="Under maintenance")
-    #     return
-    try:
-        if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
-            diff: int = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
-            te: str = f"請等待10秒 ({diff}秒 remaining)"
-            context.bot.send_message(chat_id=update.effective_chat.id, text=te,
-                                     reply_to_message_id=update.message.message_id)
-            return
-        else:
-            cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
-    except:
-        cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
-
     message: str = update.message.text.replace('/ask', '')
     if message == '':
         context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /ask [訊息]",
@@ -394,6 +393,7 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
             context.bot.send_message(chat_id=update.effective_chat.id, text="發生錯誤，請稍後再試",
                                      reply_to_message_id=update.message.message_id)
             return
+
     if len(''.join(re.findall(r'[\u4e00-\u9fff]+', message))) > 2:
         prompt: str = '你是一個專為回答問題而設計的AI，請用繁體中文回答以下問題。'
     else:
@@ -421,6 +421,19 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
             m = msg_stack.pop() if len(msg_stack) > 0 else None
     message = update.message.text.replace('/ask', '').replace('--debug', '')
     msg.append({"role": "user", "content": f"{message}"})
+
+    try:
+        if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
+            diff: int = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
+            te: str = f"請等待10秒 ({diff}秒 remaining)"
+            context.bot.send_message(chat_id=update.effective_chat.id, text=te,
+                                     reply_to_message_id=update.message.message_id)
+            return
+        else:
+            cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
+    except:
+        cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
+
     res = context.bot.send_message(chat_id=update.effective_chat.id, text="Generating...",
                                    reply_to_message_id=update.message.message_id,
                                    parse_mode='HTML', disable_web_page_preview=True)
@@ -539,7 +552,7 @@ gpa_god_handler: CommandHandler = CommandHandler('gpagod', gpa_god)
 what_to_eat_handler: CommandHandler = CommandHandler('whattoeat', what_to_eat)
 capoo_handler: CommandHandler = CommandHandler('capoo', capoo)
 cityu_info_handler: CommandHandler = CommandHandler('cityuinfo', cityu_info)
-# translate_handler: CommandHandler = CommandHandler('t', translate)
+translate_handler: CommandHandler = CommandHandler('t', translate)
 check_university_handler: CommandHandler = CommandHandler('checkuniversity', check_university)
 check_quick5_handler: CommandHandler = CommandHandler('ch', check_quick5)
 check_quick5_handler_char: CommandHandler = CommandHandler('char', check_quick5)
@@ -558,7 +571,7 @@ dispatcher.add_handler(gpa_god_handler)
 dispatcher.add_handler(what_to_eat_handler)
 dispatcher.add_handler(capoo_handler)
 dispatcher.add_handler(cityu_info_handler)
-# dispatcher.add_handler(translate_handler)
+dispatcher.add_handler(translate_handler)
 dispatcher.add_handler(delete_gpa_bot_handler)
 dispatcher.add_handler(rich_handler)
 dispatcher.add_handler(rich_handler2)
