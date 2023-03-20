@@ -1,3 +1,4 @@
+import asyncio
 import io
 import logging
 import os
@@ -150,17 +151,17 @@ async def delete_message(context: CallbackContext) -> None:
     logger.info(f"Message {context.job.context['message_id']} in {context.job.context['chat'],} deleted")
 
 
-async def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600) -> None:
-    c: dict[str, int] = {
-        "chat": update.message.chat.id,
-        "message_id": update.message.message_id,
-    }
-    await context.job_queue.run_once(delete_message, second, context=c)
-    c: dict[str, int] = {
-        "chat": update.message.chat.id,
-        "message_id": msg.message_id,
-    }
-    await context.job_queue.run_once(delete_message, second, context=c)
+# async def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600) -> None:
+#     c: dict[str, int] = {
+#         "chat": update.message.chat.id,
+#         "message_id": update.message.message_id,
+#     }
+#     await context.job_queue.run_once(delete_message, second, context=c)
+#     c: dict[str, int] = {
+#         "chat": update.message.chat.id,
+#         "message_id": msg.message_id,
+#     }
+#     await context.job_queue.run_once(delete_message, second, context=c)
 
 
 async def reset_cooldown() -> None:
@@ -194,14 +195,16 @@ async def froze(update: Update, context: CallbackContext) -> None:
     ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
                        upsert=True)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used froze")
-    await cron_delete_message(update=update, context=context, second=300, msg=msg)
+    await asyncio.sleep(300)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
 
 
 async def what_to_eat(update: Update, context: CallbackContext):
     msg = await context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
                                          reply_to_message_id=update.message.message_id)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used what to eat")
-    cron_delete_message(update=update, context=context, second=300, msg=msg)
+    await asyncio.sleep(300)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
 
 
 async def gpa_god(update: Update, context: CallbackContext) -> None:
@@ -219,7 +222,8 @@ async def gpa_god(update: Update, context: CallbackContext) -> None:
         msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id,
                                                       text="你今日咪喺度求過囉，求得多GPA會0.00！")
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used gpa god")
-    cron_delete_message(update=update, context=context, second=120, msg=msg)
+    await asyncio.sleep(120)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
 
 
 async def capoo(update: Update, context: CallbackContext) -> None:
@@ -229,7 +233,8 @@ async def capoo(update: Update, context: CallbackContext) -> None:
                                                   reply_to_message_id=update.message.message_id)
     logger.info(
         f"{update.effective_user.first_name}({update.effective_user.id}) 在 {update.effective_chat.title} 發送了一個 Capoo")
-    cron_delete_message(update=update, context=context, second=120, msg=msg)
+    await asyncio.sleep(120)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
 
 
 async def cityu_info(update: Update, context: CallbackContext) -> None:
@@ -272,7 +277,8 @@ async def translate(update: Update, context: CallbackContext) -> None:
 
 async def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used get gpa bot")
-    cron_delete_message(update=update, context=context, second=60)
+    await asyncio.sleep(60)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=update.message.message_id)
 
 
 async def rich(update: Update, context: CallbackContext) -> None:
@@ -290,14 +296,14 @@ async def edit_university_msg(context: CallbackContext):
                                         text=context.job.context["text"])
 
 
-async def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600,
-                            text: str = None) -> None:
-    c: dict[str, Any] = {
-        "chat": update.effective_chat.id,
-        "message_id": msg.message_id,
-        "text": text,
-    }
-    await context.job_queue.run_once(edit_university_msg, second, context=c)
+# async def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600,
+#                             text: str = None) -> None:
+#     c: dict[str, Any] = {
+#         "chat": update.effective_chat.id,
+#         "message_id": msg.message_id,
+#         "text": text,
+#     }
+#     await context.job_queue.run_once(edit_university_msg, second, context=c)
 
 
 async def check_university(update: Update, context: CallbackContext):
@@ -316,19 +322,27 @@ async def check_university(update: Update, context: CallbackContext):
     second: int = random.randint(1, 5)
     msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id, text="正在檢查.",
                                                   reply_to_message_id=message.message_id)
-    await cron_edit_message(update=update, context=context, msg=msg, second=second, text="正在檢查...")
-    await cron_edit_message(update=update, context=context, msg=msg, second=second * 2,
-                            text=f"正在檢查 {first_name} 的Instagram")
-    await cron_edit_message(update=update, context=context, msg=msg, second=second * 4,
-                            text=f"正在檢查 {first_name} 的Twitter")
-    await cron_edit_message(update=update, context=context, msg=msg, second=second * 5,
-                            text=f"正在檢查 {first_name} 的Linkedin")
-    await cron_edit_message(update=update, context=context, msg=msg, second=second * 6,
-                            text=f"正在向 {random_university} 確認 {first_name} 的學歷")
-    await cron_edit_message(update=update, context=context, msg=msg, second=second * 7,
-                            text=f"正在向 {random_university} 確認 {first_name} 的學歷...")
-    await cron_edit_message(update=update, context=context, msg=msg, second=second * 8,
-                            text=f"確認 {first_name} 就讀於 {random_university}")
+    await asyncio.sleep(second)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"正在檢查...")
+    await asyncio.sleep(second * 2)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"正在檢查 {first_name} 的Instagram")
+    await asyncio.sleep(second * 4)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"正在檢查 {first_name} 的Twitter")
+    await asyncio.sleep(second * 5)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"正在檢查 {first_name} 的Linkedin")
+    await asyncio.sleep(second * 6)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"正在向 {random_university} 確認 {first_name} 的學歷")
+    await asyncio.sleep(second * 7)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"正在向 {random_university} 確認 {first_name} 的學歷...")
+    await asyncio.sleep(second * 8)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=msg.message_id,
+                                        text=f"確認 {first_name} 就讀於 {random_university}")
 
 
 async def check_quick5(update: Update, context: CallbackContext) -> None:
