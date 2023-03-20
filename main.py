@@ -228,7 +228,8 @@ async def gpa_god(update: Update, context: CallbackContext) -> None:
 
 async def capoo(update: Update, context: CallbackContext) -> None:
     capoo_set: str = random.choice(capoos)
-    sticker_set: List[Sticker] = await context.bot.get_sticker_set(capoo_set).stickers
+    _sticker_set = await context.bot.get_sticker_set(capoo_set)
+    sticker_set: tuple[Sticker] = _sticker_set.stickers
     msg: Message = await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
                                                   reply_to_message_id=update.message.message_id)
     logger.info(
@@ -252,7 +253,7 @@ async def translate(update: Update, context: CallbackContext) -> None:
         prompt: str = update.message.reply_to_message.text.replace('/t', '')
     else:
         prompt: str = update.message.text.replace('/t', '')
-    if len(re.findall(r'[\u4e00-\u9fff]+', prompt)) > 0:
+    if len(re.findall(r'[\u4e00-\u9fff]+', prompt)) > 3:
         msg = [
             {"role": "system", "content": "You are a helpful assistant that translates any language to English."},
             {"role": "user", "content": f"Translate the following text to English: {prompt}"},
@@ -284,8 +285,8 @@ async def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
 async def rich(update: Update, context: CallbackContext) -> None:
     # if update.message.chat.id != -1001780288890: return
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used rich")
-    sticker_set: List[Sticker] = await context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot").stickers
-    print(sticker_set)
+    _sticker_set = await context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot")
+    sticker_set: tuple[Sticker] = _sticker_set.stickers
     msg: Message = await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[14],
                                                   reply_to_message_id=update.message.message_id)
 
