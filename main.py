@@ -75,7 +75,6 @@ chat_ids: Collection = db['chat_id']
 # translator: Translator = Translator()
 
 # updater = Updater(token=TOKEN, use_context=True)
-application = Application.builder().token(TOKEN).build()
 
 logger: logging.Logger = logging.getLogger()
 
@@ -266,10 +265,12 @@ async def translate(update: Update, context: CallbackContext) -> None:
             {"role": "user", "content": f"Translate the following text to Traditional Chinese: {prompt}"},
         ]
     message = await context.bot.send_message(chat_id=update.effective_chat.id, text="翻譯中...")
-    result = openai.ChatCompletion.create(
+    result = await openai.ChatCompletion.acreate(
         model="gpt-3.5-turbo",
         messages=msg,
         user=str(update.effective_user.id),
+        max_tokens=1500,
+        timeout=20
     )
     content: str = result['choices'][0]['message']['content']
     await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=message.message_id, text=content)
@@ -457,7 +458,7 @@ async def chatgpt(update: Update, context: CallbackContext) -> None:
                                          reply_to_message_id=update.message.message_id,
                                          parse_mode='HTML', disable_web_page_preview=True)
     try:
-        result = openai.ChatCompletion.create(
+        result = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",
             messages=msg,
             user=str(update.effective_user.id),
@@ -586,6 +587,7 @@ rich_handler2: MessageHandler = MessageHandler(filters.Regex(r'Rich'), rich)
 delete_gpa_bot_handler: MessageHandler = MessageHandler(filters.Regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
 log_chat_id_handler: MessageHandler = MessageHandler(filters.ALL, log_chat_id)
 
+application = Application.builder().token(TOKEN).build()
 application.add_handler(start_handler)
 application.add_handler(froze_handler)
 application.add_handler(gpa_god_handler)
@@ -611,7 +613,7 @@ try:
 except KeyboardInterrupt:
     # updater.stop()
     logger.info("Bot stopped")
-    # not actually stop lol
+    # not actually stopped lol
 except Exception as e:
     logger.error(e)
 
