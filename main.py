@@ -16,8 +16,10 @@ from pandas import DataFrame
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Message, Sticker, ParseMode
-from telegram.ext import CommandHandler, MessageHandler, CallbackContext, Filters, Updater, CallbackQueryHandler
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Message, Sticker
+from telegram.constants import ParseMode
+from telegram.ext import Application, CommandHandler
+from telegram.ext import MessageHandler, CallbackContext, CallbackQueryHandler, filters
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -71,11 +73,12 @@ chat_ids: Collection = db['chat_id']
 
 # translator: Translator = Translator()
 
-updater = Updater(token=TOKEN, use_context=True)
+# updater = Updater(token=TOKEN, use_context=True)
+application = Application.builder().token(TOKEN).build()
 
 logger: logging.Logger = logging.getLogger()
 
-dispatcher = updater.dispatcher
+# dispatcher = updater.dispatcher
 
 cooldown_gpa_god: dict = {}
 
@@ -142,104 +145,104 @@ cityu_infos = {
 }
 
 
-def delete_message(context: CallbackContext) -> None:
-    context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
+async def delete_message(context: CallbackContext) -> None:
+    await context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
     logger.info(f"Message {context.job.context['message_id']} in {context.job.context['chat'],} deleted")
 
 
-def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600) -> None:
+async def cron_delete_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600) -> None:
     c: dict[str, int] = {
         "chat": update.message.chat.id,
         "message_id": update.message.message_id,
     }
-    context.job_queue.run_once(delete_message, second, context=c)
+    await context.job_queue.run_once(delete_message, second, context=c)
     c: dict[str, int] = {
         "chat": update.message.chat.id,
         "message_id": msg.message_id,
     }
-    context.job_queue.run_once(delete_message, second, context=c)
+    await context.job_queue.run_once(delete_message, second, context=c)
 
 
-def reset_cooldown() -> None:
+async def reset_cooldown() -> None:
     global cooldown_gpa_god
     for x in [*cooldown_gpa_god]:
         cooldown_gpa_god[x] = []
 
 
-def start(update: Update, context: CallbackContext) -> None:
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a shitty bot, please talk to me!")
+async def start(update: Update, context: CallbackContext) -> None:
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a shitty bot, please talk to me!")
 
 
-def froze(update: Update, context: CallbackContext) -> None:
+async def froze(update: Update, context: CallbackContext) -> None:
     try:
         who: str = update.message.reply_to_message.from_user.first_name
         uid: int = update.message.reply_to_message.from_user.id
         status: str = "畢業的"
     except AttributeError:
         who: str = "他"
-        status: int = "的學生"
-        uid: str = update.effective_user.id
-    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id,
-                                            text=f"{update.effective_user.first_name}愣了，這才想起來"
-                                                 f"，{who}是城市大學{status}，"
-                                                 "所以才有這麼高的素質。城市大學是一所歷史悠久、"
-                                                 "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
-                                                 "具有重要影響力與競爭力的綜合性大學，在多個學術領"
-                                                 "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
-                                                 "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
+        status: str = "的學生"
+        uid: int = update.effective_user.id
+    msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id,
+                                                  text=f"{update.effective_user.first_name}愣了，這才想起來"
+                                                       f"，{who}是城市大學{status}，"
+                                                       "所以才有這麼高的素質。城市大學是一所歷史悠久、"
+                                                       "學科齊全、學術實力雄厚、辦學特色鮮明，在國際上"
+                                                       "具有重要影響力與競爭力的綜合性大學，在多個學術領"
+                                                       "域具有非常前瞻的科技實力，擁有世界一流的實驗室與"
+                                                       "師資力量，各種排名均位於全球前列。歡迎大家報考城市大學。")
 
     ranking.update_one({"_id": {"type": "froze", "group": update.effective_chat.id}}, {"$inc": {f"{str(uid)}": 1}},
                        upsert=True)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used froze")
-    cron_delete_message(update=update, context=context, second=300, msg=msg)
+    await cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
-def what_to_eat(update: Update, context: CallbackContext):
-    msg = context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
-                                   reply_to_message_id=update.message.message_id)
+async def what_to_eat(update: Update, context: CallbackContext):
+    msg = await context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
+                                         reply_to_message_id=update.message.message_id)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used what to eat")
     cron_delete_message(update=update, context=context, second=300, msg=msg)
 
 
-def gpa_god(update: Update, context: CallbackContext) -> None:
+async def gpa_god(update: Update, context: CallbackContext) -> None:
     if update.message.chat.id not in cooldown_gpa_god:
         cooldown_gpa_god[update.message.chat.id] = []
     if update.effective_user.id not in cooldown_gpa_god[update.message.chat.id]:
-        msg: Message = context.bot.send_message(chat_id=update.effective_chat.id,
-                                                text=f"GPA God 保佑{update.effective_user.first_name}")
+        msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id,
+                                                      text=f"GPA God 保佑{update.effective_user.first_name}")
         cooldown_gpa_god[update.message.chat.id].append(update.effective_user.id)
 
         uid: int = update.effective_user.id
         ranking.update_one({"_id": {"type": "gpa_god", "group": update.effective_chat.id}},
                            {"$inc": {f"{str(uid)}": 1}}, upsert=True)
     else:
-        msg: Message = context.bot.send_message(chat_id=update.effective_chat.id,
-                                                text="你今日咪喺度求過囉，求得多GPA會0.00！")
+        msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id,
+                                                      text="你今日咪喺度求過囉，求得多GPA會0.00！")
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used gpa god")
     cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
-def capoo(update: Update, context: CallbackContext) -> None:
+async def capoo(update: Update, context: CallbackContext) -> None:
     capoo_set: str = random.choice(capoos)
-    sticker_set: List[Sticker] = context.bot.get_sticker_set(capoo_set).stickers
-    msg: Message = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
-                                            reply_to_message_id=update.message.message_id)
+    sticker_set: List[Sticker] = await context.bot.get_sticker_set(capoo_set).stickers
+    msg: Message = await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=random.choice(sticker_set),
+                                                  reply_to_message_id=update.message.message_id)
     logger.info(
         f"{update.effective_user.first_name}({update.effective_user.id}) 在 {update.effective_chat.title} 發送了一個 Capoo")
     cron_delete_message(update=update, context=context, second=120, msg=msg)
 
 
-def cityu_info(update: Update, context: CallbackContext) -> None:
+async def cityu_info(update: Update, context: CallbackContext) -> None:
     strs: str = ""
     for k, v in cityu_infos.items():
         strs += k + " " + v
         strs += "\n"
-    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text=strs,
-                                            reply_to_message_id=update.message.message_id)
+    msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id, text=strs,
+                                                  reply_to_message_id=update.message.message_id)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) send cityu info")
 
 
-def translate(update: Update, context: CallbackContext) -> None:
+async def translate(update: Update, context: CallbackContext) -> None:
     if update.message.reply_to_message is not None:
         prompt: str = update.message.reply_to_message.text.replace('/t', '')
     else:
@@ -256,47 +259,48 @@ def translate(update: Update, context: CallbackContext) -> None:
                                           "Traditional Chinese."},
             {"role": "user", "content": f"Translate the following text to Traditional Chinese: {prompt}"},
         ]
-    message = context.bot.send_message(chat_id=update.effective_chat.id, text="翻譯中...")
+    message = await context.bot.send_message(chat_id=update.effective_chat.id, text="翻譯中...")
     result = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=msg,
         user=str(update.effective_user.id),
     )
     content: str = result['choices'][0]['message']['content']
-    context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=message.message_id, text=content)
+    await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=message.message_id, text=content)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) translate {prompt} to {result}")
 
 
-def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
+async def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used get gpa bot")
     cron_delete_message(update=update, context=context, second=60)
 
 
-def rich(update: Update, context: CallbackContext) -> None:
+async def rich(update: Update, context: CallbackContext) -> None:
     # if update.message.chat.id != -1001780288890: return
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used rich")
-    sticker_set: List[Sticker] = context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot").stickers
+    sticker_set: List[Sticker] = await context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot").stickers
     print(sticker_set)
-    msg: Message = context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[14],
-                                            reply_to_message_id=update.message.message_id)
+    msg: Message = await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=sticker_set[14],
+                                                  reply_to_message_id=update.message.message_id)
 
 
-def edit_university_msg(context: CallbackContext):
-    context.bot.edit_message_text(chat_id=context.job.context["chat"], message_id=context.job.context["message_id"],
-                                  text=context.job.context["text"])
+async def edit_university_msg(context: CallbackContext):
+    await context.bot.edit_message_text(chat_id=context.job.context["chat"],
+                                        message_id=context.job.context["message_id"],
+                                        text=context.job.context["text"])
 
 
-def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600,
-                      text: str = None) -> None:
+async def cron_edit_message(update: Update = None, context: CallbackContext = None, msg=None, second=3600,
+                            text: str = None) -> None:
     c: dict[str, Any] = {
         "chat": update.effective_chat.id,
         "message_id": msg.message_id,
         "text": text,
     }
-    context.job_queue.run_once(edit_university_msg, second, context=c)
+    await context.job_queue.run_once(edit_university_msg, second, context=c)
 
 
-def check_university(update: Update, context: CallbackContext):
+async def check_university(update: Update, context: CallbackContext):
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check university")
     if update.message.reply_to_message is not None:
         message: Message = update.message.reply_to_message
@@ -310,24 +314,24 @@ def check_university(update: Update, context: CallbackContext):
                                "University of Bath"]
     random_university: str = random.choice(universities)
     second: int = random.randint(1, 5)
-    msg: Message = context.bot.send_message(chat_id=update.effective_chat.id, text="正在檢查.",
-                                            reply_to_message_id=message.message_id)
-    cron_edit_message(update=update, context=context, msg=msg, second=second, text="正在檢查...")
-    cron_edit_message(update=update, context=context, msg=msg, second=second * 2,
-                      text=f"正在檢查 {first_name} 的Instagram")
-    cron_edit_message(update=update, context=context, msg=msg, second=second * 4,
-                      text=f"正在檢查 {first_name} 的Twitter")
-    cron_edit_message(update=update, context=context, msg=msg, second=second * 5,
-                      text=f"正在檢查 {first_name} 的Linkedin")
-    cron_edit_message(update=update, context=context, msg=msg, second=second * 6,
-                      text=f"正在向 {random_university} 確認 {first_name} 的學歷")
-    cron_edit_message(update=update, context=context, msg=msg, second=second * 7,
-                      text=f"正在向 {random_university} 確認 {first_name} 的學歷...")
-    cron_edit_message(update=update, context=context, msg=msg, second=second * 8,
-                      text=f"確認 {first_name} 就讀於 {random_university}")
+    msg: Message = await context.bot.send_message(chat_id=update.effective_chat.id, text="正在檢查.",
+                                                  reply_to_message_id=message.message_id)
+    await cron_edit_message(update=update, context=context, msg=msg, second=second, text="正在檢查...")
+    await cron_edit_message(update=update, context=context, msg=msg, second=second * 2,
+                            text=f"正在檢查 {first_name} 的Instagram")
+    await cron_edit_message(update=update, context=context, msg=msg, second=second * 4,
+                            text=f"正在檢查 {first_name} 的Twitter")
+    await cron_edit_message(update=update, context=context, msg=msg, second=second * 5,
+                            text=f"正在檢查 {first_name} 的Linkedin")
+    await cron_edit_message(update=update, context=context, msg=msg, second=second * 6,
+                            text=f"正在向 {random_university} 確認 {first_name} 的學歷")
+    await cron_edit_message(update=update, context=context, msg=msg, second=second * 7,
+                            text=f"正在向 {random_university} 確認 {first_name} 的學歷...")
+    await cron_edit_message(update=update, context=context, msg=msg, second=second * 8,
+                            text=f"確認 {first_name} 就讀於 {random_university}")
 
 
-def check_quick5(update: Update, context: CallbackContext) -> None:
+async def check_quick5(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check quick5")
     msg: str = update.message.text.split(" ")[-1]
     if len(msg) == 1:
@@ -367,16 +371,16 @@ def check_quick5(update: Update, context: CallbackContext) -> None:
     else:
         msg_to_send: str = "請輸入 /char [字(冇s)]"
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=msg_to_send,
-                             reply_to_message_id=update.message.message_id)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=msg_to_send,
+                                   reply_to_message_id=update.message.message_id)
 
 
-def chatgpt(update: Update, context: CallbackContext) -> None:
+async def chatgpt(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used chatgpt")
     message: str = update.message.text.replace('/ask', '')
     if message == '':
-        context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /ask [訊息]",
-                                 reply_to_message_id=update.message.message_id)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /ask [訊息]",
+                                       reply_to_message_id=update.message.message_id)
         return
     else:
         try:
@@ -390,8 +394,8 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
                             'reply_id': reply_id})
         except Exception as e:
             logger.error(e)
-            context.bot.send_message(chat_id=update.effective_chat.id, text="發生錯誤，請稍後再試",
-                                     reply_to_message_id=update.message.message_id)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="發生錯誤，請稍後再試",
+                                           reply_to_message_id=update.message.message_id)
             return
 
     if len(''.join(re.findall(r'[\u4e00-\u9fff]+', message))) > 2:
@@ -403,7 +407,7 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
     msg_stack: list = []
     if update.message.reply_to_message is not None:
         if update.message.reply_to_message.from_user.id != 1973202635:
-            context.bot.send_message(chat_id=update.effective_chat.id, text="You must reply to my message")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="You must reply to my message")
             return
         conversation: Any = gpt.find_one(
             {'chat_id': update.effective_chat.id, 'message_id': update.message.reply_to_message.message_id})
@@ -426,29 +430,30 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
         if abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time())) < 10:
             diff: int = abs(cooldown_chat_gpt[str(update.effective_chat.id)] - int(time.time()))
             te: str = f"請等待10秒 ({diff}秒 remaining)"
-            context.bot.send_message(chat_id=update.effective_chat.id, text=te,
-                                     reply_to_message_id=update.message.message_id)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=te,
+                                           reply_to_message_id=update.message.message_id)
             return
         else:
             cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
     except:
         cooldown_chat_gpt[str(update.effective_chat.id)] = int(time.time())
 
-    res = context.bot.send_message(chat_id=update.effective_chat.id, text="Generating...",
-                                   reply_to_message_id=update.message.message_id,
-                                   parse_mode='HTML', disable_web_page_preview=True)
+    res = await context.bot.send_message(chat_id=update.effective_chat.id, text="Generating...",
+                                         reply_to_message_id=update.message.message_id,
+                                         parse_mode='HTML', disable_web_page_preview=True)
     try:
         result = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=msg,
-            max_tokens=2000,
             user=str(update.effective_user.id),
+            timeout=30,
+
         )
     except Exception as e:
         logger.error(e)
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text="Error, it might be caused by exceeding the tokens limit",
-                                 reply_to_message_id=update.message.message_id)
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="Error, it might be caused by exceeding the tokens limit",
+                                       reply_to_message_id=update.message.message_id)
         return
     content: str = result['choices'][0]['message']['content']
     if '--debug' in update.message.text:
@@ -458,23 +463,24 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
     gpt.insert_one(
         {'chat_id': update.effective_chat.id, 'message_id': res.message_id, 'message': content,
          'user_id': 1973202635, 'reply_id': update.message.message_id})
-    content += "\n\n<a href='https://payme.hsbc/eugenelam'>PayMe</a> | <a " \
-               "href='https://forms.gle/m2FXLs84aZ5y5V8q6'>Givemeapikey</a>"
+    content += "\n\n<a href='https://carousell.app.link/EtxvM2gpgyb'>代購ChatGPT Plus</a>"
     try:
-        context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
-                                      parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
+                                            parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     except Exception as e:
         # wontfix
         logger.error(e)
         try:
-            context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
-                                          parse_mode=ParseMode.MARKDOWN_V2,
-                                          disable_web_page_preview=True)
+            await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id,
+                                                text=content,
+                                                parse_mode=ParseMode.MARKDOWN_V2,
+                                                disable_web_page_preview=True)
         except Exception as e:
             logger.error(e)
             try:
-                context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
-                                              disable_web_page_preview=True)
+                await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id,
+                                                    text=content,
+                                                    disable_web_page_preview=True)
             except Exception as e:
                 logger.error(e)
                 tmp = tempfile.NamedTemporaryFile()
@@ -485,13 +491,13 @@ def chatgpt(update: Update, context: CallbackContext) -> None:
                 # Open the file for reading.
                 with open(tmp.name, 'r') as f:
                     file = f.read()
-                context.bot.send_document(chat_id=update.effective_chat.id,
-                                          document=io.BytesIO(file.encode('utf-8')),
-                                          filename='output.txt',
-                                          reply_to_message_id=update.message.message_id)
+                await context.bot.send_document(chat_id=update.effective_chat.id,
+                                                document=io.BytesIO(file.encode('utf-8')),
+                                                filename='output.txt',
+                                                reply_to_message_id=update.message.message_id)
 
 
-def purge_data(update: Update, context: CallbackContext):
+async def purge_data(update: Update, context: CallbackContext):
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used purge_data")
     message: str = "Warning: This will delete all chat record related to the message in the database, " \
                    "are you sure you want to continue?" \
@@ -499,10 +505,10 @@ def purge_data(update: Update, context: CallbackContext):
                    "警告: 這會刪除所有與該訊息有關的聊天記錄，你確定要繼續嗎？"
     markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
         [[InlineKeyboardButton("Yes", callback_data='yes'), InlineKeyboardButton("No", callback_data='no')]])
-    context.bot.send_message(chat_id=update.effective_chat, text=message, reply_markup=markup)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=message, reply_markup=markup)
 
 
-def callback_purge_data_handler(update: Update, context: CallbackContext) -> None:
+async def callback_purge_data_handler(update: Update, context: CallbackContext) -> None:
     callback_data: str = update.callback_query.data
     if callback_data == 'yes':
         reply_id: int = update.callback_query.message.reply_to_message.message_id
@@ -515,34 +521,34 @@ def callback_purge_data_handler(update: Update, context: CallbackContext) -> Non
         pass
 
 
-def log_chat_id(update: Update, context: CallbackContext) -> None:
+async def log_chat_id(update: Update, context: CallbackContext) -> None:
     chat_ids.update_one({'chat_id': update.effective_chat.id}, {'$set': {'chat_id': update.effective_chat.id}},
                         upsert=True)
 
 
-def broadcast(update: Update, context: CallbackContext) -> None:
+async def broadcast(update: Update, context: CallbackContext) -> None:
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used broadcast")
     if update.effective_user.id != 110054652:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
         return
     message: str = update.message.text.replace('/broadcast ', '')
     if message == '':
-        context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /broadcast [訊息]")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入 /broadcast [訊息]")
         return
     else:
         for chat_id in chat_ids.find({}):
             try:
-                context.bot.send_message(chat_id=chat_id['chat_id'], text=message)
+                await context.bot.send_message(chat_id=chat_id['chat_id'], text=message)
             except Exception as e:
                 logger.error(e)
                 pass
 
 
-def toggle_chat_command(update: Update, context: CallbackContext):
+async def toggle_chat_command(update: Update, context: CallbackContext):
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used toggle_chat_command")
 
     if update.effective_user.id != 110054652:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
         return
 
 
@@ -560,36 +566,37 @@ chatgpt_handler: CommandHandler = CommandHandler('ask', chatgpt)
 broadcast_handler: CommandHandler = CommandHandler('broadcast', broadcast)
 purge_data_handler: CommandHandler = CommandHandler('purgedata', purge_data)
 
-rich_handler: MessageHandler = MessageHandler(Filters.regex(r'rich'), rich)
-rich_handler2: MessageHandler = MessageHandler(Filters.regex(r'Rich'), rich)
-delete_gpa_bot_handler: MessageHandler = MessageHandler(Filters.regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
-log_chat_id_handler: MessageHandler = MessageHandler(Filters.all, log_chat_id)
+rich_handler: MessageHandler = MessageHandler(filters.Regex(r'rich'), rich)
+rich_handler2: MessageHandler = MessageHandler(filters.Regex(r'Rich'), rich)
+delete_gpa_bot_handler: MessageHandler = MessageHandler(filters.Regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
+log_chat_id_handler: MessageHandler = MessageHandler(filters.ALL, log_chat_id)
 
-dispatcher.add_handler(start_handler)
-dispatcher.add_handler(froze_handler)
-dispatcher.add_handler(gpa_god_handler)
-dispatcher.add_handler(what_to_eat_handler)
-dispatcher.add_handler(capoo_handler)
-dispatcher.add_handler(cityu_info_handler)
-dispatcher.add_handler(translate_handler)
-dispatcher.add_handler(delete_gpa_bot_handler)
-dispatcher.add_handler(rich_handler)
-dispatcher.add_handler(rich_handler2)
-dispatcher.add_handler(check_university_handler)
-dispatcher.add_handler(check_quick5_handler)
-dispatcher.add_handler(check_quick5_handler_char)
-dispatcher.add_handler(chatgpt_handler)
-dispatcher.add_handler(broadcast_handler)
-dispatcher.add_handler(purge_data_handler)
-dispatcher.add_handler(CallbackQueryHandler(callback_purge_data_handler))
+application.add_handler(start_handler)
+application.add_handler(froze_handler)
+application.add_handler(gpa_god_handler)
+application.add_handler(what_to_eat_handler)
+application.add_handler(capoo_handler)
+application.add_handler(cityu_info_handler)
+application.add_handler(translate_handler)
+application.add_handler(delete_gpa_bot_handler)
+application.add_handler(rich_handler)
+application.add_handler(rich_handler2)
+application.add_handler(check_university_handler)
+application.add_handler(check_quick5_handler)
+application.add_handler(check_quick5_handler_char)
+application.add_handler(chatgpt_handler)
+application.add_handler(broadcast_handler)
+application.add_handler(purge_data_handler)
+application.add_handler(CallbackQueryHandler(callback_purge_data_handler))
 
-dispatcher.add_handler(log_chat_id_handler)
+application.add_handler(log_chat_id_handler)
 
 try:
-    updater.start_polling()
+    application.run_polling()
 except KeyboardInterrupt:
-    updater.stop()
+    # updater.stop()
     logger.info("Bot stopped")
+    # not actually stop lol
 except Exception as e:
     logger.error(e)
 
