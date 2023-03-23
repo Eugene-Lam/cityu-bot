@@ -478,7 +478,7 @@ async def chatgpt(update: Update, context: CallbackContext) -> None:
     gpt.insert_one(
         {'chat_id': update.effective_chat.id, 'message_id': res.message_id, 'message': content,
          'user_id': 1973202635, 'reply_id': update.message.message_id})
-    content += "\n\n<a href='https://carousell.app.link/EtxvM2gpgyb'>代購ChatGPT Plus</a>"
+    content += "\n\n<a href='https://chatgpt.eugene-lam.hk'>代購ChatGPT Plus</a>"
     try:
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id, text=content,
                                             parse_mode=ParseMode.HTML, disable_web_page_preview=True)
@@ -608,6 +608,9 @@ application.add_handler(CallbackQueryHandler(callback_purge_data_handler))
 application.add_handler(log_chat_id_handler)
 
 try:
+    application.connection_pool_size(10)
+    application.pool_timeout(20)
+    application.concurrent_updates(True)
     application.run_polling()
 except KeyboardInterrupt:
     # updater.stop()
