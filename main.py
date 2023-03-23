@@ -467,9 +467,8 @@ async def chatgpt(update: Update, context: CallbackContext) -> None:
         )
     except Exception as e:
         logger.error(e)
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text="Error, it might be caused by exceeding the tokens limit",
-                                       reply_to_message_id=update.message.message_id)
+        await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=res.message_id,
+                                            text="Error, it might be caused by exceeding the tokens limit.", )
         return
     content: str = result['choices'][0]['message']['content']
     if '--debug' in update.message.text:
