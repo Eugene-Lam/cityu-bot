@@ -18,7 +18,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Message, Sticker
 from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler
+from telegram.ext import CommandHandler, ApplicationBuilder
 from telegram.ext import MessageHandler, CallbackContext, CallbackQueryHandler, filters
 
 logging.basicConfig(level=logging.INFO,
@@ -593,8 +593,7 @@ rich_handler2: MessageHandler = MessageHandler(filters.Regex(r'Rich'), rich)
 delete_gpa_bot_handler: MessageHandler = MessageHandler(filters.Regex(r'你GPA係: \d.\d\d'), delete_gpa_bot)
 log_chat_id_handler: MessageHandler = MessageHandler(filters.ALL, log_chat_id)
 
-application = Application.builder().token(TOKEN).build()
-# application.concurrent_updates(True)
+application = ApplicationBuilder().concurrent_updates(True).token(TOKEN).build()
 application.add_handler(start_handler)
 application.add_handler(froze_handler)
 application.add_handler(gpa_god_handler)
@@ -617,7 +616,6 @@ application.add_handler(CallbackQueryHandler(callback_purge_data_handler))
 application.add_handler(log_chat_id_handler)
 
 try:
-    # application.concurrent_updates()
     application.run_polling()
 except KeyboardInterrupt:
     # updater.stop()
