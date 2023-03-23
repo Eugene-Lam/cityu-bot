@@ -567,6 +567,12 @@ async def toggle_chat_command(update: Update, context: CallbackContext):
         return
 
 
+async def source_code(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used source_code")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="https://github.com/Eugene-Lam/cityu-bot",
+                                   reply_to_message_id=update.message.message_id)
+
+
 start_handler: CommandHandler = CommandHandler('start', start)
 froze_handler: CommandHandler = CommandHandler('froze', froze)
 gpa_god_handler: CommandHandler = CommandHandler('gpagod', gpa_god)
@@ -580,6 +586,7 @@ check_quick5_handler_char: CommandHandler = CommandHandler('char', check_quick5)
 chatgpt_handler: CommandHandler = CommandHandler('ask', chatgpt)
 broadcast_handler: CommandHandler = CommandHandler('broadcast', broadcast)
 purge_data_handler: CommandHandler = CommandHandler('purgedata', purge_data)
+source_code_handler: CommandHandler = CommandHandler('source', source_code)
 
 rich_handler: MessageHandler = MessageHandler(filters.Regex(r'rich'), rich)
 rich_handler2: MessageHandler = MessageHandler(filters.Regex(r'Rich'), rich)
@@ -587,6 +594,7 @@ delete_gpa_bot_handler: MessageHandler = MessageHandler(filters.Regex(r'ä½ GPAä¿
 log_chat_id_handler: MessageHandler = MessageHandler(filters.ALL, log_chat_id)
 
 application = Application.builder().token(TOKEN).build()
+# application.concurrent_updates(True)
 application.add_handler(start_handler)
 application.add_handler(froze_handler)
 application.add_handler(gpa_god_handler)
@@ -603,14 +611,13 @@ application.add_handler(check_quick5_handler_char)
 application.add_handler(chatgpt_handler)
 application.add_handler(broadcast_handler)
 application.add_handler(purge_data_handler)
+application.add_handler(source_code_handler)
 application.add_handler(CallbackQueryHandler(callback_purge_data_handler))
 
 application.add_handler(log_chat_id_handler)
 
 try:
-    application.connection_pool_size(10)
-    application.pool_timeout(20)
-    application.concurrent_updates(True)
+    # application.concurrent_updates()
     application.run_polling()
 except KeyboardInterrupt:
     # updater.stop()
