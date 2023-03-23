@@ -146,6 +146,7 @@ cityu_infos = {
 
 
 async def delete_message(context: CallbackContext) -> None:
+    """Delete the message from the chat."""
     await context.bot.delete_message(context.job.context["chat"], context.job.context["message_id"])
     logger.info(f"Message {context.job.context['message_id']} in {context.job.context['chat'],} deleted")
 
@@ -164,16 +165,19 @@ async def delete_message(context: CallbackContext) -> None:
 
 
 async def reset_cooldown() -> None:
+    """Reset the cooldown"""
     global cooldown_gpa_god
     for x in [*cooldown_gpa_god]:
         cooldown_gpa_god[x] = []
 
 
 async def start(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /start is issued."""
     await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a shitty bot, please talk to me!")
 
 
 async def froze(update: Update, context: CallbackContext) -> None:
+    """Froze the user"""
     try:
         who: str = update.message.reply_to_message.from_user.first_name
         uid: int = update.message.reply_to_message.from_user.id
@@ -199,6 +203,7 @@ async def froze(update: Update, context: CallbackContext) -> None:
 
 
 async def what_to_eat(update: Update, context: CallbackContext):
+    """What to eat?"""
     msg = await context.bot.send_message(chat_id=update.effective_chat.id, text=random.choice(restaurant) + "!",
                                          reply_to_message_id=update.message.message_id)
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used what to eat")
@@ -207,6 +212,7 @@ async def what_to_eat(update: Update, context: CallbackContext):
 
 
 async def gpa_god(update: Update, context: CallbackContext) -> None:
+    """GPA God 保佑你"""
     if update.message.chat.id not in cooldown_gpa_god:
         cooldown_gpa_god[update.message.chat.id] = []
     if update.effective_user.id not in cooldown_gpa_god[update.message.chat.id]:
@@ -226,6 +232,7 @@ async def gpa_god(update: Update, context: CallbackContext) -> None:
 
 
 async def capoo(update: Update, context: CallbackContext) -> None:
+    """Send a random Capoo sticker."""
     capoo_set: str = random.choice(capoos)
     _sticker_set = await context.bot.get_sticker_set(capoo_set)
     sticker_set: tuple[Sticker] = _sticker_set.stickers
@@ -238,6 +245,7 @@ async def capoo(update: Update, context: CallbackContext) -> None:
 
 
 async def cityu_info(update: Update, context: CallbackContext) -> None:
+    """Send the information of CityU."""
     strs: str = ""
     for k, v in cityu_infos.items():
         strs += k + " " + v
@@ -248,6 +256,7 @@ async def cityu_info(update: Update, context: CallbackContext) -> None:
 
 
 async def translate(update: Update, context: CallbackContext) -> None:
+    """Translate the text to English or Traditional Chinese."""
     if update.message.reply_to_message is not None:
         prompt: str = update.message.reply_to_message.text.replace('/t', '')
     else:
@@ -278,12 +287,14 @@ async def translate(update: Update, context: CallbackContext) -> None:
 
 
 async def delete_gpa_bot(update: Update, context: CallbackContext) -> None:
+    """Delete gpa bot message"""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used get gpa bot")
-    # await asyncio.sleep(60)
-    # await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=update.message.message_id)
+    await asyncio.sleep(60)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=update.message.message_id)
 
 
 async def rich(update: Update, context: CallbackContext) -> None:
+    """Send rich sticker"""
     # if update.message.chat.id != -1001780288890: return
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used rich")
     _sticker_set = await context.bot.get_sticker_set("line_276090076_by_moe_sticker_bot")
@@ -293,6 +304,7 @@ async def rich(update: Update, context: CallbackContext) -> None:
 
 
 async def edit_university_msg(context: CallbackContext):
+    """Edit university message"""
     await context.bot.edit_message_text(chat_id=context.job.context["chat"],
                                         message_id=context.job.context["message_id"],
                                         text=context.job.context["text"])
@@ -309,6 +321,7 @@ async def edit_university_msg(context: CallbackContext):
 
 
 async def check_university(update: Update, context: CallbackContext):
+    """Check university for user"""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check university")
     if update.message.reply_to_message is not None:
         message: Message = update.message.reply_to_message
@@ -348,6 +361,7 @@ async def check_university(update: Update, context: CallbackContext):
 
 
 async def check_quick5(update: Update, context: CallbackContext) -> None:
+    """Check quick5 code of a character."""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used check quick5")
     msg: str = update.message.text.split(" ")[-1]
     if len(msg) == 1:
@@ -392,6 +406,7 @@ async def check_quick5(update: Update, context: CallbackContext) -> None:
 
 
 async def chatgpt(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /ask is issued."""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used chatgpt")
     message: str = update.message.text.replace('/ask', '')
     if message == '':
@@ -516,6 +531,7 @@ async def chatgpt(update: Update, context: CallbackContext) -> None:
 
 
 async def purge_data(update: Update, context: CallbackContext):
+    """Purge data from the database"""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used purge_data")
     message: str = "Warning: This will delete all chat record related to the message in the database, " \
                    "are you sure you want to continue?" \
@@ -527,6 +543,7 @@ async def purge_data(update: Update, context: CallbackContext):
 
 
 async def callback_purge_data_handler(update: Update, context: CallbackContext) -> None:
+    """Handle callback data from purge_data"""
     callback_data: str = update.callback_query.data
     if callback_data == 'yes':
         reply_id: int = update.callback_query.message.reply_to_message.message_id
@@ -540,11 +557,13 @@ async def callback_purge_data_handler(update: Update, context: CallbackContext) 
 
 
 async def log_chat_id(update: Update, context: CallbackContext) -> None:
+    """Log chat id to database"""
     chat_ids.update_one({'chat_id': update.effective_chat.id}, {'$set': {'chat_id': update.effective_chat.id}},
                         upsert=True)
 
 
 async def broadcast(update: Update, context: CallbackContext) -> None:
+    """Broadcast a message to all chats"""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used broadcast")
     if update.effective_user.id != 110054652:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="你唔係主人，唔可以用呢個指令")
@@ -563,6 +582,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
 
 
 async def toggle_chat_command(update: Update, context: CallbackContext):
+    """Toggle the /ask command."""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used toggle_chat_command")
 
     if update.effective_user.id != 110054652:
@@ -571,8 +591,34 @@ async def toggle_chat_command(update: Update, context: CallbackContext):
 
 
 async def source_code(update: Update, context: CallbackContext):
+    """Send the source code of the bot."""
     logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used source_code")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="https://github.com/Eugene-Lam/cityu-bot",
+                                   reply_to_message_id=update.message.message_id)
+
+
+async def help(update: Update, context: CallbackContext):
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used help")
+    text = "Commands:\n" \
+           "/start - Start the bot\n" \
+           "/froze - Get the frozen\n" \
+           "/gpagod - Get the GPA God\n" \
+           "/whattoeat - Get the food\n" \
+           "/capoo - Get the CAPOO\n" \
+           "/cityuinfo - Get the CityU info\n" \
+           "/t - Translate\n" \
+           "/checkuniversity - Check the university\n" \
+           "/ch - Check the quick5\n" \
+           "/char - Check the quick5\n" \
+           "/ask - Ask the ChatGPT\n"
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=text,
+                                   reply_to_message_id=update.message.message_id)
+
+
+async def ping(update: Update, context: CallbackContext):
+    """Ping the bot."""
+    logger.info(f"{update.effective_user.first_name}({update.effective_user.id}) used ping")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Pong!",
                                    reply_to_message_id=update.message.message_id)
 
 
@@ -590,6 +636,8 @@ chatgpt_handler: CommandHandler = CommandHandler('ask', chatgpt)
 broadcast_handler: CommandHandler = CommandHandler('broadcast', broadcast)
 purge_data_handler: CommandHandler = CommandHandler('purgedata', purge_data)
 source_code_handler: CommandHandler = CommandHandler('source', source_code)
+help_handler: CommandHandler = CommandHandler('help', help)
+ping_handler: CommandHandler = CommandHandler('ping', ping)
 
 rich_handler: MessageHandler = MessageHandler(filters.Regex(r'rich'), rich)
 rich_handler2: MessageHandler = MessageHandler(filters.Regex(r'Rich'), rich)
@@ -614,6 +662,8 @@ application.add_handler(chatgpt_handler)
 application.add_handler(broadcast_handler)
 application.add_handler(purge_data_handler)
 application.add_handler(source_code_handler)
+application.add_handler(help_handler)
+application.add_handler(ping_handler)
 application.add_handler(CallbackQueryHandler(callback_purge_data_handler))
 
 application.add_handler(log_chat_id_handler)
