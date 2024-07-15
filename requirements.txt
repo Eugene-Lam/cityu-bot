@@ -1,4 +1,4 @@
-python-telegram-bot==20.4
+python-telegram-bot==21.4
 pymongo[srv]
 pymongo==4.3.3
 requests==2.24.0
